@@ -1,0 +1,36 @@
+import { NextRequest, NextResponse } from "next/server";
+import { refineIdea } from "@/lib/panel";
+
+export const runtime = "nodejs";
+export const maxDuration = 60;
+
+export async function POST(req: NextRequest) {
+  const apiKey = req.headers.get("x-api-key")?.trim();
+  if (!apiKey) {
+    return NextResponse.json({ error: "Missing API key" }, { status: 401 });
+  }
+
+  let body: { idea?: string; guidelines?: string };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const idea = body.idea?.trim();
+  const guidelines = body.guidelines?.trim();
+  if (!idea || !guidelines) {
+    return NextResponse.json(
+      { error: "idea and guidelines are required" },
+      { status: 400 },
+    );
+  }
+
+  try {
+    const refined = await refineIdea(apiKey, idea, guidelines);
+    return NextResponse.json(refined);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Refine failed";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}

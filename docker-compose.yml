@@ -1,0 +1,8 @@
+services:
+  painel:
+    build: ./webapp
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+    restart: unless-stopped
