@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isLocale } from "@/lib/i18n";
 import { refineIdea } from "@/lib/panel";
 
 export const runtime = "nodejs";
@@ -10,7 +11,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing API key" }, { status: 401 });
   }
 
-  let body: { idea?: string; guidelines?: string };
+  let body: { idea?: string; guidelines?: string; locale?: string };
   try {
     body = await req.json();
   } catch {
@@ -26,8 +27,11 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const rawLocale = body.locale ?? "en";
+  const locale = isLocale(rawLocale) ? rawLocale : "en";
+
   try {
-    const refined = await refineIdea(apiKey, idea, guidelines);
+    const refined = await refineIdea(apiKey, idea, guidelines, locale);
     return NextResponse.json(refined);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Refine failed";

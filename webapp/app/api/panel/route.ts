@@ -1,20 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isLocale } from "@/lib/i18n";
 import { runPanel } from "@/lib/panel";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
-function getApiKey(req: NextRequest): string | null {
-  return req.headers.get("x-api-key")?.trim() || null;
-}
-
 export async function POST(req: NextRequest) {
-  const apiKey = getApiKey(req);
+  const apiKey = req.headers.get("x-api-key")?.trim();
   if (!apiKey) {
     return NextResponse.json({ error: "Missing API key" }, { status: 401 });
   }
 
-  let body: { idea?: string; guidelines?: string; replyRounds?: number };
+  let body: {
+    idea?: string;
+    guidelines?: string;
+    replyRounds?: number;
+    locale?: string;
+  };
   try {
     body = await req.json();
   } catch {
@@ -30,6 +32,8 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const rawLocale = body.locale ?? "en";
+  const locale = isLocale(rawLocale) ? rawLocale : "en";
   const replyRounds = Math.min(2, Math.max(0, body.replyRounds ?? 1));
   const encoder = new TextEncoder();
 
@@ -47,6 +51,7 @@ export async function POST(req: NextRequest) {
           idea,
           guidelines,
           replyRounds,
+          locale,
         )) {
           send(event);
         }

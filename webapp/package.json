@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3001",
+    "dev": "next dev -p 3555",
     "build": "next build",
-    "start": "next start -p 3001"
+    "start": "next start -p 3555"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.88.0",

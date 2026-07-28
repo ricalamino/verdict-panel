@@ -14,7 +14,7 @@ Next.js dockerizado: API key no `localStorage`, ideia/diretrizes editáveis (com
 docker compose up --build
 ```
 
-Abre http://localhost:3001
+Abre http://localhost:3555
 
 ### Dev local
 
@@ -25,7 +25,7 @@ npm run dev
 ```
 
 1. Cola a Anthropic API key → Salvar (fica no browser).
-2. Ajusta ideia + diretrizes (ou **Refinar com IA**).
+2. Ajusta ideia + diretrizes (ou **Refinar com IA**). Idioma default: English; combo no topo troca pra Português (UI + prompts).
 3. **Rodar discussão** — abertura → réplicas → juiz.
 4. Exporta `.txt` ou `.doc`.
 

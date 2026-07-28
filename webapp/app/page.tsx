@@ -1,16 +1,26 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ApiKeyGate } from "@/components/ApiKeyGate";
 import { DebateView, VerdictView } from "@/components/DebateView";
-import { DEFAULT_GUIDELINES, DEFAULT_IDEA } from "@/lib/defaults";
 import { buildExportText, downloadDoc, downloadTxt } from "@/lib/export";
+import {
+  DEFAULT_LOCALE,
+  LOCALE_STORAGE_KEY,
+  getMessages,
+  isLocale,
+  type Locale,
+} from "@/lib/i18n";
 import type { PanelEvent, TranscriptEntry } from "@/lib/panel";
 
 export default function HomePage() {
+  const [locale, setLocale] = useState<Locale>(DEFAULT_LOCALE);
+  const [hydrated, setHydrated] = useState(false);
   const [apiKey, setApiKey] = useState("");
-  const [idea, setIdea] = useState(DEFAULT_IDEA);
-  const [guidelines, setGuidelines] = useState(DEFAULT_GUIDELINES);
+  const [idea, setIdea] = useState(() => getMessages(DEFAULT_LOCALE).defaultIdea);
+  const [guidelines, setGuidelines] = useState(
+    () => getMessages(DEFAULT_LOCALE).defaultGuidelines,
+  );
   const [replyRounds, setReplyRounds] = useState(1);
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
   const [verdict, setVerdict] = useState<string | null>(null);
@@ -20,11 +30,38 @@ export default function HomePage() {
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
+  const t = useMemo(() => getMessages(locale), [locale]);
+
+  useEffect(() => {
+    const stored = localStorage.getItem(LOCALE_STORAGE_KEY);
+    const next = isLocale(stored) ? stored : DEFAULT_LOCALE;
+    setLocale(next);
+    const msgs = getMessages(next);
+    setIdea(msgs.defaultIdea);
+    setGuidelines(msgs.defaultGuidelines);
+    document.documentElement.lang = next === "pt" ? "pt-BR" : "en";
+    setHydrated(true);
+  }, []);
+
+  function changeLocale(next: Locale) {
+    if (next === locale) return;
+    const prev = getMessages(locale);
+    const msgs = getMessages(next);
+    // Swap templates only if user hasn't customized them
+    if (idea.trim() === prev.defaultIdea.trim()) setIdea(msgs.defaultIdea);
+    if (guidelines.trim() === prev.defaultGuidelines.trim()) {
+      setGuidelines(msgs.defaultGuidelines);
+    }
+    setLocale(next);
+    localStorage.setItem(LOCALE_STORAGE_KEY, next);
+    document.documentElement.lang = next === "pt" ? "pt-BR" : "en";
+  }
+
   const onReady = useCallback((key: string) => setApiKey(key), []);
 
   async function refine() {
     if (!apiKey) {
-      setError("Salve a API key antes.");
+      setError(t.errNeedKey);
       return;
     }
     setRefining(true);
@@ -36,14 +73,14 @@ export default function HomePage() {
           "Content-Type": "application/json",
           "x-api-key": apiKey,
         },
-        body: JSON.stringify({ idea, guidelines }),
+        body: JSON.stringify({ idea, guidelines, locale }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Falha ao refinar");
+      if (!res.ok) throw new Error(data.error || t.errRefine);
       setIdea(data.idea);
       setGuidelines(data.guidelines);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Erro no refine");
+      setError(e instanceof Error ? e.message : t.errRefine);
     } finally {
       setRefining(false);
     }
@@ -51,11 +88,11 @@ export default function HomePage() {
 
   async function runPanel() {
     if (!apiKey) {
-      setError("Salve a API key antes.");
+      setError(t.errNeedKey);
       return;
     }
     if (!idea.trim() || !guidelines.trim()) {
-      setError("Ideia e diretrizes são obrigatórias.");
+      setError(t.errNeedFields);
       return;
     }
 
@@ -67,7 +104,7 @@ export default function HomePage() {
     setError(null);
     setTranscript([]);
     setVerdict(null);
-    setCurrentRound("Iniciando painel");
+    setCurrentRound(t.starting);
 
     try {
       const res = await fetch("/api/panel", {
@@ -76,7 +113,7 @@ export default function HomePage() {
           "Content-Type": "application/json",
           "x-api-key": apiKey,
         },
-        body: JSON.stringify({ idea, guidelines, replyRounds }),
+        body: JSON.stringify({ idea, guidelines, replyRounds, locale }),
         signal: ac.signal,
       });
 
@@ -114,7 +151,7 @@ export default function HomePage() {
       }
     } catch (e) {
       if (e instanceof Error && e.name === "AbortError") return;
-      setError(e instanceof Error ? e.message : "Erro no painel");
+      setError(e instanceof Error ? e.message : t.errPanel);
     } finally {
       setRunning(false);
       setCurrentRound(null);
@@ -133,34 +170,50 @@ export default function HomePage() {
       idea,
       guidelines,
       transcript,
-      verdict: verdict ?? "(sem veredito)",
+      verdict: verdict ?? t.noVerdict,
+      t,
     });
     const stamp = new Date().toISOString().slice(0, 10);
     if (format === "txt") {
-      downloadTxt(`painel-validacao-${stamp}.txt`, text);
+      downloadTxt(`validation-panel-${stamp}.txt`, text);
     } else {
-      downloadDoc(`painel-validacao-${stamp}.doc`, text, verdict ?? "");
+      downloadDoc(`validation-panel-${stamp}.doc`, text, verdict ?? "", t);
     }
   }
 
   const canRun = Boolean(apiKey) && !running && !refining;
 
+  if (!hydrated) {
+    return <main className="page" />;
+  }
+
   return (
     <main className="page">
       <header className="hero">
-        <p className="brand">Painel</p>
-        <h1>Validação adversarial de projetos</h1>
-        <p className="lede">
-          Advogado, Promotor e Cético debatem. O juiz emite GO / NO-GO / PIVOT —
-          hipóteses frágeis pra testar com humanos, não com outra IA.
-        </p>
+        <div className="hero-top">
+          <p className="brand">{t.brand}</p>
+          <label className="lang-switch">
+            <span className="sr-only">{t.language}</span>
+            <select
+              value={locale}
+              onChange={(e) => changeLocale(e.target.value as Locale)}
+              disabled={running || refining}
+              aria-label={t.language}
+            >
+              <option value="en">English</option>
+              <option value="pt">Português</option>
+            </select>
+          </label>
+        </div>
+        <h1>{t.title}</h1>
+        <p className="lede">{t.lede}</p>
       </header>
 
-      <ApiKeyGate onReady={onReady} />
+      <ApiKeyGate onReady={onReady} t={t} />
 
       <section className="brief">
         <div className="field">
-          <label htmlFor="idea">Ideia</label>
+          <label htmlFor="idea">{t.ideaLabel}</label>
           <textarea
             id="idea"
             rows={6}
@@ -170,7 +223,7 @@ export default function HomePage() {
           />
         </div>
         <div className="field">
-          <label htmlFor="guidelines">Diretrizes e contexto</label>
+          <label htmlFor="guidelines">{t.guidelinesLabel}</label>
           <textarea
             id="guidelines"
             rows={12}
@@ -182,7 +235,7 @@ export default function HomePage() {
 
         <div className="controls">
           <label className="rounds">
-            Réplicas
+            {t.replies}
             <select
               value={replyRounds}
               onChange={(e) => setReplyRounds(Number(e.target.value))}
@@ -201,7 +254,7 @@ export default function HomePage() {
               onClick={refine}
               disabled={!canRun}
             >
-              {refining ? "Refinando…" : "Refinar com IA"}
+              {refining ? t.refining : t.refine}
             </button>
             {!running ? (
               <button
@@ -210,11 +263,11 @@ export default function HomePage() {
                 onClick={runPanel}
                 disabled={!canRun}
               >
-                Rodar discussão
+                {t.run}
               </button>
             ) : (
               <button type="button" className="btn danger" onClick={stop}>
-                Parar
+                {t.stop}
               </button>
             )}
           </div>
@@ -227,13 +280,14 @@ export default function HomePage() {
         transcript={transcript}
         currentRound={currentRound}
         running={running}
+        t={t}
       />
 
-      <VerdictView verdict={verdict} />
+      <VerdictView verdict={verdict} t={t} />
 
       {(transcript.length > 0 || verdict) && (
         <section className="export-bar">
-          <p>Salvar discussão</p>
+          <p>{t.saveDiscussion}</p>
           <div className="actions">
             <button
               type="button"
@@ -255,10 +309,7 @@ export default function HomePage() {
         </section>
       )}
 
-      <footer className="foot">
-        Não substitui validação de mercado. O útil são as hipóteses frágeis —
-        teste com humanos na semana.
-      </footer>
+      <footer className="foot">{t.footer}</footer>
     </main>
   );
 }

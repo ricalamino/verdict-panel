@@ -13,9 +13,9 @@ const sans = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "Painel — Validação de Projetos",
+  title: "Panel — Project Validation",
   description:
-    "Painel adversarial: Advogado, Promotor e Cético debatem; o juiz emite GO / NO-GO / PIVOT.",
+    "Adversarial panel: Advocate, Prosecutor, and Market Skeptic debate; the judge issues GO / NO-GO / PIVOT.",
 };
 
 export default function RootLayout({
@@ -24,7 +24,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pt-BR" className={`${display.variable} ${sans.variable}`}>
+    <html lang="en" className={`${display.variable} ${sans.variable}`}>
       <body>{children}</body>
     </html>
   );

@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { STORAGE_KEY } from "@/lib/defaults";
+import type { Messages } from "@/lib/i18n";
 
 type Props = {
   onReady: (key: string) => void;
+  t: Messages;
 };
 
-export function ApiKeyGate({ onReady }: Props) {
+export function ApiKeyGate({ onReady, t }: Props) {
   const [key, setKey] = useState("");
   const [saved, setSaved] = useState(false);
   const [show, setShow] = useState(false);
@@ -40,7 +42,7 @@ export function ApiKeyGate({ onReady }: Props) {
     <section className="key-bar" aria-label="API key">
       <div className="key-bar-inner">
         <label htmlFor="api-key" className="key-label">
-          Anthropic API Key
+          {t.apiKeyLabel}
         </label>
         <div className="key-row">
           <input
@@ -52,21 +54,30 @@ export function ApiKeyGate({ onReady }: Props) {
             autoComplete="off"
             spellCheck={false}
           />
-          <button type="button" className="btn ghost" onClick={() => setShow((s) => !s)}>
-            {show ? "Ocultar" : "Mostrar"}
+          <button
+            type="button"
+            className="btn ghost"
+            onClick={() => setShow((s) => !s)}
+          >
+            {show ? t.hide : t.show}
           </button>
-          <button type="button" className="btn primary" onClick={save} disabled={!key.trim()}>
-            Salvar
+          <button
+            type="button"
+            className="btn primary"
+            onClick={save}
+            disabled={!key.trim()}
+          >
+            {t.save}
           </button>
           {saved && (
             <button type="button" className="btn ghost" onClick={clear}>
-              Limpar
+              {t.clear}
             </button>
           )}
         </div>
         <p className="key-hint">
-          Persistida só no seu <code>localStorage</code> — enviada ao servidor só na hora da chamada.
-          {saved ? " ✓ salva." : ""}
+          {t.keyHint}
+          {saved ? t.keySaved : ""}
         </p>
       </div>
     </section>
