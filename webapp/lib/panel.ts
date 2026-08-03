@@ -11,6 +11,14 @@ import {
 import type { Locale, RoleId } from "./i18n";
 import { ROLE_IDS } from "./i18n";
 import { getPrompts, roleLabel } from "./prompts";
+import { evidenceRules } from "./prompts.server";
+import {
+  parseFirstHandEvidence,
+  renderBriefingContext,
+  runResearcher,
+  type Briefing,
+  type ResearchAudit,
+} from "./research";
 
 export type Role = RoleId;
 
@@ -25,19 +33,53 @@ export function createClient(apiKey: string) {
   return new Anthropic({ apiKey });
 }
 
+/**
+ * Shared prefix (briefing + idea + guidelines [+ evidence rules]) is byte-
+ * identical across agents/rounds and marked ephemeral so later calls pay
+ * cache-read (~10%) instead of full input. Role/judge text and the turn ask
+ * stay OUT of the cached prefix — otherwise one token of drift = 0% hit rate.
+ *
+ * Cache hash order: tools → system → messages. We have no tools here, so
+ * system[0] is the breakpoint.
+ */
 async function callModel(
   client: Anthropic,
   model: string,
-  system: string,
+  sharedSystem: string | null,
+  roleSystem: string,
   userMessage: string,
   maxTokens: number,
+  signal?: AbortSignal,
 ): Promise<string> {
-  const resp = await client.messages.create({
-    model,
-    max_tokens: maxTokens,
-    system,
-    messages: [{ role: "user", content: userMessage }],
-  });
+  const system: Anthropic.TextBlockParam[] = [];
+  if (sharedSystem) {
+    system.push({
+      type: "text",
+      text: sharedSystem,
+      cache_control: { type: "ephemeral" },
+    });
+  }
+  system.push({ type: "text", text: roleSystem });
+
+  const resp = await client.messages.create(
+    {
+      model,
+      max_tokens: maxTokens,
+      system,
+      messages: [{ role: "user", content: userMessage }],
+    },
+    { signal },
+  );
+
+  const cacheRead = resp.usage.cache_read_input_tokens ?? 0;
+  const cacheCreate = resp.usage.cache_creation_input_tokens ?? 0;
+  if (cacheRead || cacheCreate) {
+    console.error(
+      `[panel] cache model=${resp.model} create=${cacheCreate} read=${cacheRead} ` +
+        `in=${resp.usage.input_tokens} out=${resp.usage.output_tokens}`,
+    );
+  }
+
   return resp.content
     .filter((b): b is Anthropic.TextBlock => b.type === "text")
     .map((b) => b.text)
@@ -45,17 +87,29 @@ async function callModel(
     .trim();
 }
 
-function contextBlock(
+function sharedPrefix(
   idea: string,
   guidelines: string,
   locale: Locale,
+  briefingBlock: string,
+  withEvidence: boolean,
 ): string {
   const p = getPrompts(locale);
-  return `## ${p.contextIdea}\n${idea}\n\n## ${p.contextGuidelines}\n${guidelines}`;
+  const parts: string[] = [];
+  if (briefingBlock) {
+    parts.push(`## ${p.contextBriefing}\n${briefingBlock}`);
+  }
+  parts.push(`## ${p.contextIdea}\n${idea}`);
+  parts.push(`## ${p.contextGuidelines}\n${guidelines}`);
+  if (withEvidence) {
+    parts.push(evidenceRules(locale));
+  }
+  return parts.join("\n\n");
 }
 
 export type PanelEvent =
   | { type: "round"; name: string }
+  | { type: "briefing"; briefing: Briefing; audit: ResearchAudit | null }
   | { type: "speech"; entry: TranscriptEntry }
   | { type: "verdict"; text: string }
   | { type: "error"; message: string }
@@ -67,10 +121,59 @@ export async function* runPanel(
   guidelines: string,
   replyRounds = REPLY_ROUNDS,
   locale: Locale = "en",
+  skipResearch = false,
+  signal?: AbortSignal,
+  firstHandEvidence = "",
 ): AsyncGenerator<PanelEvent> {
   const client = createClient(apiKey);
   const p = getPrompts(locale);
-  const context = contextBlock(idea, guidelines, locale);
+  const fatosVf = parseFirstHandEvidence(firstHandEvidence);
+
+  let briefingBlock = "";
+  if (!skipResearch) {
+    yield { type: "round", name: p.researchRound };
+    const { briefing, audit } = await runResearcher(
+      client,
+      idea,
+      guidelines,
+      locale,
+      signal,
+    );
+    briefing.fatos_vf = fatosVf;
+    briefingBlock = renderBriefingContext(briefing, {
+      emptyNotice: p.briefingEmpty,
+      factsHeader: p.contextBriefing,
+      firstHandHeader: p.contextFirstHand,
+      blockingGapsHeader: p.contextBlockingGaps,
+      gapsHeader: p.contextGaps,
+      alertsHeader: p.contextAlerts,
+    });
+    yield { type: "briefing", briefing, audit };
+  } else if (fatosVf.length) {
+    // v1 baseline can still carry founder evidence.
+    const stub: Briefing = { fatos: [], fatos_vf: fatosVf };
+    briefingBlock = renderBriefingContext(stub, {
+      emptyNotice: p.briefingEmpty,
+      factsHeader: p.contextBriefing,
+      firstHandHeader: p.contextFirstHand,
+      blockingGapsHeader: p.contextBlockingGaps,
+      gapsHeader: p.contextGaps,
+      alertsHeader: p.contextAlerts,
+    });
+    yield { type: "briefing", briefing: stub, audit: null };
+  }
+
+  // Persona / judge only — evidence rules live in the shared cached prefix.
+  const roleSystem = (role: RoleId) => p.roles[role];
+  const judgeSystem = skipResearch && !fatosVf.length ? p.judge : p.judgeBriefing;
+  const shared = sharedPrefix(
+    idea,
+    guidelines,
+    locale,
+    briefingBlock,
+    !skipResearch || fatosVf.length > 0,
+  );
+
   const transcript: TranscriptEntry[] = [];
 
   yield { type: "round", name: p.openingRound };
@@ -79,9 +182,11 @@ export async function* runPanel(
     const text = await callModel(
       client,
       PANEL_MODEL,
-      p.roles[role],
-      `${context}\n\n${p.openAsk}`,
+      shared,
+      roleSystem(role),
+      p.openAsk,
       MAX_TOKENS_PANEL,
+      signal,
     );
     const entry: TranscriptEntry = {
       role,
@@ -104,9 +209,11 @@ export async function* runPanel(
       const text = await callModel(
         client,
         PANEL_MODEL,
-        p.roles[role],
-        `${context}\n\n## ${p.debateSoFar}\n${debateSoFar}\n\n${p.replyAsk}`,
+        shared,
+        roleSystem(role),
+        `## ${p.debateSoFar}\n${debateSoFar}\n\n${p.replyAsk}`,
         MAX_TOKENS_PANEL,
+        signal,
       );
       const entry: TranscriptEntry = {
         role,
@@ -128,9 +235,11 @@ export async function* runPanel(
   const verdict = await callModel(
     client,
     JUDGE_MODEL,
-    p.judge,
-    `${context}\n\n## ${p.fullDebate}\n${debate}\n\n${p.verdictAsk}`,
+    shared,
+    judgeSystem,
+    `## ${p.fullDebate}\n${debate}\n\n${p.verdictAsk}`,
     MAX_TOKENS_JUDGE,
+    signal,
   );
 
   yield { type: "verdict", text: verdict };
@@ -145,11 +254,13 @@ export async function refineIdea(
 ): Promise<{ idea: string; guidelines: string }> {
   const client = createClient(apiKey);
   const p = getPrompts(locale);
+  const shared = sharedPrefix(idea, guidelines, locale, "", false);
   const raw = await callModel(
     client,
     REFINE_MODEL,
+    shared,
     p.refine,
-    contextBlock(idea, guidelines, locale),
+    "Refine the IDEA and GUIDELINES above.",
     MAX_TOKENS_REFINE,
   );
 
@@ -169,14 +280,4 @@ export async function refineIdea(
     idea: ideaMatch?.[1]?.trim() || idea,
     guidelines: guidelinesMatch?.[1]?.trim() || guidelines,
   };
-}
-
-export function extractVerdictLabel(
-  verdict: string,
-): "GO" | "NO-GO" | "PIVOT" | null {
-  const m = verdict.match(/(?:Verdict|Veredito):\s*(GO|NO-GO|PIVOT)/i);
-  if (!m) return null;
-  const v = m[1].toUpperCase();
-  if (v === "GO" || v === "NO-GO" || v === "PIVOT") return v;
-  return null;
 }

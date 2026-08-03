@@ -3,7 +3,9 @@ import { isLocale } from "@/lib/i18n";
 import { runPanel } from "@/lib/panel";
 
 export const runtime = "nodejs";
-export const maxDuration = 300;
+// Research alone can take ~2–3 min; debate after that. Was 300 and killed
+// mid-research while the Anthropic request kept burning.
+export const maxDuration = 600;
 
 export async function POST(req: NextRequest) {
   const apiKey = req.headers.get("x-api-key")?.trim();
@@ -16,6 +18,8 @@ export async function POST(req: NextRequest) {
     guidelines?: string;
     replyRounds?: number;
     locale?: string;
+    skipResearch?: boolean;
+    firstHandEvidence?: string;
   };
   try {
     body = await req.json();
@@ -35,14 +39,20 @@ export async function POST(req: NextRequest) {
   const rawLocale = body.locale ?? "en";
   const locale = isLocale(rawLocale) ? rawLocale : "en";
   const replyRounds = Math.min(2, Math.max(0, body.replyRounds ?? 1));
+  const firstHandEvidence = body.firstHandEvidence?.trim() ?? "";
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream({
     async start(controller) {
+      // Once the client disconnects the stream is gone; enqueueing into it
+      // throws. Swallow that so it doesn't mask the real abort.
       const send = (data: unknown) => {
-        controller.enqueue(
-          encoder.encode(`data: ${JSON.stringify(data)}\n\n`),
-        );
+        if (req.signal.aborted) return;
+        try {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+        } catch {
+          // stream already closed by the client
+        }
       };
 
       try {
@@ -52,15 +62,25 @@ export async function POST(req: NextRequest) {
           guidelines,
           replyRounds,
           locale,
+          body.skipResearch === true,
+          req.signal,
+          firstHandEvidence,
         )) {
           send(event);
         }
       } catch (err) {
-        const message =
-          err instanceof Error ? err.message : "Unknown panel error";
-        send({ type: "error", message });
+        // An abort is the user pressing Stop, not a failure worth reporting.
+        if (!req.signal.aborted) {
+          const message =
+            err instanceof Error ? err.message : "Unknown panel error";
+          send({ type: "error", message });
+        }
       } finally {
-        controller.close();
+        try {
+          controller.close();
+        } catch {
+          // already closed
+        }
       }
     },
   });

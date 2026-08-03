@@ -240,6 +240,22 @@ select:focus {
   min-width: 4rem;
 }
 
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggle input {
+  width: auto;
+  margin: 0;
+  cursor: pointer;
+}
+
 .actions {
   display: flex;
   flex-wrap: wrap;
@@ -301,6 +317,177 @@ select:focus {
   font-size: 1.55rem;
   font-weight: 550;
   margin: 0 0 1rem;
+}
+
+.briefing {
+  margin-bottom: 2.5rem;
+  padding: 1.25rem 1.35rem;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--ink-soft);
+  border-radius: var(--radius);
+}
+
+.briefing-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.briefing-head .section-title {
+  margin-bottom: 0.75rem;
+}
+
+.briefing-meta {
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.briefing-sub {
+  margin: 1rem 0 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+
+.briefing-sub:first-of-type {
+  margin-top: 0;
+}
+
+.field-hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.briefing-sub-vf {
+  color: var(--ink);
+}
+
+.briefing-sub-alert {
+  color: #8a5a00;
+}
+
+.gap-list-alert {
+  color: #8a5a00;
+}
+
+.fact-id-vf {
+  color: #1a6b3c;
+}
+
+.vf-fields {
+  margin: 0.25rem 0 0 1.25rem;
+  padding: 0;
+  list-style: none;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  display: grid;
+  gap: 0.15rem;
+}
+
+.vf-key {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.vf-field-missing {
+  color: #a33;
+}
+
+.fact-id-soft {
+  color: #8a5a00;
+}
+
+.fact-soft .fact-claim {
+  opacity: 0.85;
+}
+
+.fact-list,
+.gap-list {
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.5rem;
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.gap-list {
+  list-style: disc;
+  padding-left: 1.1rem;
+  color: var(--muted);
+}
+
+.gap-list-blocking {
+  color: var(--ink);
+}
+
+.briefing-sub-blocking {
+  color: var(--ink);
+}
+
+.fact-id {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.fact-claim {
+  color: var(--ink-soft);
+}
+
+.fact-source {
+  font-size: 0.82rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+a.fact-source:hover {
+  color: var(--ink);
+}
+
+.fact-date {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.fact-date-missing {
+  color: #a33;
+}
+
+.exec-list {
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.exec-axis {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+
+.exec-empty .exec-terms {
+  color: #a33;
+}
+
+.thinking-hint {
+  margin-left: 0.5rem;
+  font-size: 0.82rem;
+  opacity: 0.75;
 }
 
 .debate {
@@ -449,6 +636,16 @@ select:focus {
 
 .verdict-pivot .verdict-banner {
   background: linear-gradient(135deg, #8a5a12, #b56a0a);
+}
+
+.verdict-indeterminate .verdict-banner {
+  background: linear-gradient(135deg, #2f4858, #46697d);
+}
+
+/* "INDETERMINADO" is long — the display size would overflow on narrow screens. */
+.verdict-indeterminate .verdict-label {
+  font-size: clamp(1.5rem, 4.5vw, 2.4rem);
+  overflow-wrap: anywhere;
 }
 
 .verdict-unknown .verdict-banner {

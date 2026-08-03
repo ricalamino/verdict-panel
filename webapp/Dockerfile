@@ -23,6 +23,9 @@ RUN addgroup --system --gid 1001 nodejs \
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# Belt and suspenders alongside outputFileTracingIncludes: the researcher reads
+# these at runtime and a missing file aborts the panel.
+COPY --from=builder --chown=nextjs:nodejs /app/prompts ./prompts
 
 USER nextjs
 EXPOSE 3555

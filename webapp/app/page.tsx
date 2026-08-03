@@ -2,8 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ApiKeyGate } from "@/components/ApiKeyGate";
-import { DebateView, VerdictView } from "@/components/DebateView";
-import { buildExportText, downloadDoc, downloadTxt } from "@/lib/export";
+import { BriefingView, DebateView, VerdictView } from "@/components/DebateView";
+import {
+  buildExportText,
+  downloadBriefingJson,
+  downloadDoc,
+  downloadTxt,
+} from "@/lib/export";
 import {
   DEFAULT_LOCALE,
   LOCALE_STORAGE_KEY,
@@ -12,6 +17,7 @@ import {
   type Locale,
 } from "@/lib/i18n";
 import type { PanelEvent, TranscriptEntry } from "@/lib/panel";
+import type { Briefing, ResearchAudit } from "@/lib/research";
 
 export default function HomePage() {
   const [locale, setLocale] = useState<Locale>(DEFAULT_LOCALE);
@@ -21,7 +27,11 @@ export default function HomePage() {
   const [guidelines, setGuidelines] = useState(
     () => getMessages(DEFAULT_LOCALE).defaultGuidelines,
   );
+  const [firstHand, setFirstHand] = useState("");
   const [replyRounds, setReplyRounds] = useState(1);
+  const [skipResearch, setSkipResearch] = useState(false);
+  const [briefing, setBriefing] = useState<Briefing | null>(null);
+  const [audit, setAudit] = useState<ResearchAudit | null>(null);
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
   const [verdict, setVerdict] = useState<string | null>(null);
   const [currentRound, setCurrentRound] = useState<string | null>(null);
@@ -104,6 +114,8 @@ export default function HomePage() {
     setError(null);
     setTranscript([]);
     setVerdict(null);
+    setBriefing(null);
+    setAudit(null);
     setCurrentRound(t.starting);
 
     try {
@@ -113,7 +125,14 @@ export default function HomePage() {
           "Content-Type": "application/json",
           "x-api-key": apiKey,
         },
-        body: JSON.stringify({ idea, guidelines, replyRounds, locale }),
+        body: JSON.stringify({
+          idea,
+          guidelines,
+          replyRounds,
+          locale,
+          skipResearch,
+          firstHandEvidence: firstHand,
+        }),
         signal: ac.signal,
       });
 
@@ -139,6 +158,10 @@ export default function HomePage() {
           const event = JSON.parse(line.slice(6)) as PanelEvent;
 
           if (event.type === "round") setCurrentRound(event.name);
+          if (event.type === "briefing") {
+            setBriefing(event.briefing);
+            setAudit(event.audit);
+          }
           if (event.type === "speech") {
             setTranscript((prev) => [...prev, event.entry]);
           }
@@ -164,16 +187,29 @@ export default function HomePage() {
     setCurrentRound(null);
   }
 
-  function exportFile(format: "txt" | "doc") {
-    if (!verdict && !transcript.length) return;
+  function exportFile(format: "txt" | "doc" | "json") {
+    if (!verdict && !transcript.length && !briefing) return;
+    const stamp = new Date().toISOString().slice(0, 10);
+
+    if (format === "json") {
+      downloadBriefingJson(`validation-briefing-${stamp}.json`, {
+        idea,
+        guidelines,
+        briefing,
+        audit,
+      });
+      return;
+    }
+
     const text = buildExportText({
       idea,
       guidelines,
+      briefing,
+      audit,
       transcript,
       verdict: verdict ?? t.noVerdict,
       t,
     });
-    const stamp = new Date().toISOString().slice(0, 10);
     if (format === "txt") {
       downloadTxt(`validation-panel-${stamp}.txt`, text);
     } else {
@@ -232,6 +268,18 @@ export default function HomePage() {
             disabled={running}
           />
         </div>
+        <div className="field">
+          <label htmlFor="firstHand">{t.firstHandLabel}</label>
+          <textarea
+            id="firstHand"
+            rows={8}
+            value={firstHand}
+            onChange={(e) => setFirstHand(e.target.value)}
+            disabled={running}
+            placeholder={t.firstHandHint}
+          />
+          <p className="field-hint">{t.firstHandHint}</p>
+        </div>
 
         <div className="controls">
           <label className="rounds">
@@ -245,6 +293,16 @@ export default function HomePage() {
               <option value={1}>1</option>
               <option value={2}>2</option>
             </select>
+          </label>
+
+          <label className="toggle">
+            <input
+              type="checkbox"
+              checked={skipResearch}
+              onChange={(e) => setSkipResearch(e.target.checked)}
+              disabled={running}
+            />
+            {t.skipResearch}
           </label>
 
           <div className="actions">
@@ -276,6 +334,8 @@ export default function HomePage() {
         {error && <p className="error">{error}</p>}
       </section>
 
+      <BriefingView briefing={briefing} audit={audit} t={t} />
+
       <DebateView
         transcript={transcript}
         currentRound={currentRound}
@@ -285,7 +345,7 @@ export default function HomePage() {
 
       <VerdictView verdict={verdict} t={t} />
 
-      {(transcript.length > 0 || verdict) && (
+      {(transcript.length > 0 || verdict || briefing) && (
         <section className="export-bar">
           <p>{t.saveDiscussion}</p>
           <div className="actions">
@@ -305,6 +365,16 @@ export default function HomePage() {
             >
               .doc
             </button>
+            {briefing && (
+              <button
+                type="button"
+                className="btn ghost"
+                onClick={() => exportFile("json")}
+                disabled={running}
+              >
+                .json
+              </button>
+            )}
           </div>
         </section>
       )}
