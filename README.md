@@ -1,12 +1,12 @@
-# Painel de Validação de Projetos
+# Project Validation Panel
 
-Painel adversarial com LLMs para estressar uma ideia de negócio **antes** de construir. Três papéis debatem; um juiz emite veredito GO / NO-GO / PIVOT e um plano de validação de 7 dias.
+An adversarial LLM panel that stress-tests a business idea **before** you build it. Three roles debate; a judge issues a GO / NO-GO / PIVOT verdict plus a 7-day validation plan.
 
-**Isto não substitui validação de mercado.** O output útil é a lista de hipóteses frágeis para você testar com humanos de verdade.
+**This does not replace market validation.** The useful output is the list of fragile hypotheses for you to test with real humans.
 
-## App web (recomendado)
+## Web app (recommended)
 
-Next.js dockerizado: API key no `localStorage`, ideia/diretrizes editáveis (com defaults), refine via IA, discussão ao vivo, veredito destacado, export `.txt` / `.doc`.
+Dockerized Next.js: API key in `localStorage`, editable idea/guidelines (with defaults), AI-assisted refine, live discussion, highlighted verdict, `.txt` / `.doc` export.
 
 ### Docker
 
@@ -14,9 +14,9 @@ Next.js dockerizado: API key no `localStorage`, ideia/diretrizes editáveis (com
 docker compose up --build
 ```
 
-Abre http://localhost:3555
+Opens http://localhost:3555
 
-### Dev local
+### Local dev
 
 ```bash
 cd webapp
@@ -24,47 +24,47 @@ npm install
 npm run dev
 ```
 
-1. Cola a Anthropic API key → Salvar (fica no browser).
-2. Ajusta ideia + diretrizes (ou **Refinar com IA**). Idioma default: English; combo no topo troca pra Português (UI + prompts).
-3. **Rodar discussão** — abertura → réplicas → juiz.
-4. Exporta `.txt` ou `.doc`.
+1. Paste your Anthropic API key → Save (stays in the browser).
+2. Adjust idea + guidelines (or hit **Refine with AI**). Default language: English; the selector at the top switches to Portuguese (UI + prompts).
+3. **Run discussion** — opening → replies → judge.
+4. Export `.txt` or `.doc`.
 
-A key sobe só no header `x-api-key` das rotas `/api/panel` e `/api/refine`. Não precisa de `.env` no servidor.
+The key is only sent in the `x-api-key` header of the `/api/panel` and `/api/refine` routes. No server-side `.env` needed.
 
-## Script Python (CLI)
+## Python script (CLI)
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 pip install anthropic python-dotenv
-export ANTHROPIC_API_KEY=sua-chave
-# edite IDEIA/DIRETRIZES no fim de plano_validacao.py
-python plano_validacao.py
+export ANTHROPIC_API_KEY=your-key
+# edit IDEA/GUIDELINES at the bottom of validation_panel.py
+python validation_panel.py
 ```
 
-## Como funciona
+## How it works
 
 ```
-IDEIA + DIRETRIZES
+IDEA + GUIDELINES
         │
         ▼
 ┌───────────────────────┐
-│  Rodada de abertura   │  Haiku — Advogado, Promotor, Cético
+│    Opening round      │  Haiku — Advocate, Prosecutor, Skeptic
 └───────────────────────┘
         │
         ▼
 ┌───────────────────────┐
-│  Rodada(s) de réplica │  cada um ataca os outros
+│    Reply round(s)     │  each one attacks the others
 └───────────────────────┘
         │
         ▼
 ┌───────────────────────┐
-│  Juiz (Opus)          │  GO / NO-GO / PIVOT + plano 7 dias
+│    Judge (Opus)       │  GO / NO-GO / PIVOT + 7-day plan
 └───────────────────────┘
 ```
 
-| Peça | Modelo default |
+| Piece | Default model |
 |---|---|
-| Debatedores / refine | `claude-haiku-4-5-20251001` |
-| Juiz | `claude-opus-4-8` |
-| Réplicas | 0–2 (default 1) |
+| Debaters / refine | `claude-haiku-4-5-20251001` |
+| Judge | `claude-opus-4-8` |
+| Replies | 0–2 (default 1) |

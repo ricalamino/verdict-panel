@@ -1,5 +1,5 @@
 services:
-  painel:
+  panel:
     build: ./webapp
     ports:
       - "3555:3555"

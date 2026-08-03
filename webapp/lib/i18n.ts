@@ -1,7 +1,7 @@
 export type Locale = "en" | "pt";
 
 export const DEFAULT_LOCALE: Locale = "en";
-export const LOCALE_STORAGE_KEY = "painel_locale";
+export const LOCALE_STORAGE_KEY = "panel_locale";
 
 export type RoleId = "advocate" | "prosecutor" | "skeptic";
 

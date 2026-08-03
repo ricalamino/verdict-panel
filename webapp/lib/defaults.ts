@@ -1,4 +1,4 @@
-export const STORAGE_KEY = "painel_anthropic_api_key";
+export const STORAGE_KEY = "panel_anthropic_api_key";
 
 export const PANEL_MODEL = "claude-haiku-4-5-20251001";
 export const JUDGE_MODEL = "claude-opus-4-8";
