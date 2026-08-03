@@ -22,6 +22,14 @@ export type Messages = {
   guidelinesLabel: string;
   firstHandLabel: string;
   firstHandHint: string;
+  vfFieldLabels: Record<
+    | "valor_mensal"
+    | "n_clientes"
+    | "o_que_exatamente_esta_sendo_cobrado"
+    | "isolado_ou_pacote"
+    | "meses_de_retencao",
+    string
+  >;
   replies: string;
   skipResearch: string;
   refine: string;
@@ -93,7 +101,14 @@ const en: Messages = {
   guidelinesLabel: "Guidelines & context",
   firstHandLabel: "First-hand evidence [F-VF]",
   firstHandHint:
-    "One block per fact, blank line between blocks. ALL keys required — any missing → [F-VF?] (= [P]). No defaults.\n\nvalor_mensal:\nn_clientes:\no_que_exatamente_esta_sendo_cobrado:\nisolado_ou_pacote:\nmeses_de_retencao:",
+    "One block per fact, blank line between blocks. ALL keys required — any missing → [F-VF?] (= [P]). No defaults.\n\nmonthly_value:\nn_customers:\nwhat_exactly_is_charged:\nstandalone_or_bundle:\nmonths_of_retention:",
+  vfFieldLabels: {
+    valor_mensal: "monthly_value",
+    n_clientes: "n_customers",
+    o_que_exatamente_esta_sendo_cobrado: "what_exactly_is_charged",
+    isolado_ou_pacote: "standalone_or_bundle",
+    meses_de_retencao: "months_of_retention",
+  },
   replies: "Replies",
   skipResearch: "Skip research (v1)",
   refine: "Refine with AI",
@@ -190,6 +205,13 @@ const pt: Messages = {
   firstHandLabel: "Evidência de primeira mão [F-VF]",
   firstHandHint:
     "Um bloco por fato, linha em branco entre blocos. TODAS as chaves obrigatórias — qualquer ausente → [F-VF?] (= [P]). Sem default.\n\nvalor_mensal:\nn_clientes:\no_que_exatamente_esta_sendo_cobrado:\nisolado_ou_pacote:\nmeses_de_retencao:",
+  vfFieldLabels: {
+    valor_mensal: "valor_mensal",
+    n_clientes: "n_clientes",
+    o_que_exatamente_esta_sendo_cobrado: "o_que_exatamente_esta_sendo_cobrado",
+    isolado_ou_pacote: "isolado_ou_pacote",
+    meses_de_retencao: "meses_de_retencao",
+  },
   replies: "Réplicas",
   skipResearch: "Sem pesquisa (v1)",
   refine: "Refinar com IA",

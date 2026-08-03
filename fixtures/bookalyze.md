@@ -26,14 +26,24 @@ Orçamento / tempo disponível: operação existente — validar expansão, não
 
 ## Evidência de primeira mão [F-VF] — PREENCHA TODOS OS CAMPOS
 
-Um bloco por fato. Linha em branco entre blocos. Sem default em isolado_ou_pacote.
+Um bloco por fato. Linha em branco entre blocos. Sem default em isolado_ou_pacote / standalone_or_bundle.
 
+PT:
 ```
 valor_mensal: 
 n_clientes: 
 o_que_exatamente_esta_sendo_cobrado: 
 isolado_ou_pacote: 
 meses_de_retencao: 
+```
+
+EN (também aceito):
+```
+monthly_value: 
+n_customers: 
+what_exactly_is_charged: 
+standalone_or_bundle: 
+months_of_retention: 
 ```
 
 Texto livre / campo vazio → o bloco inteiro vira [F-VF?] e vale [P].

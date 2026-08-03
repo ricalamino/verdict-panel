@@ -16,6 +16,7 @@ import {
   parseFirstHandEvidence,
   renderBriefingContext,
   runResearcher,
+  VF_FIELD_LABELS,
   type Briefing,
   type ResearchAudit,
 } from "./research";
@@ -147,6 +148,7 @@ export async function* runPanel(
       blockingGapsHeader: p.contextBlockingGaps,
       gapsHeader: p.contextGaps,
       alertsHeader: p.contextAlerts,
+      vfFieldLabels: { ...VF_FIELD_LABELS[locale] },
     });
     yield { type: "briefing", briefing, audit };
   } else if (fatosVf.length) {
@@ -159,6 +161,7 @@ export async function* runPanel(
       blockingGapsHeader: p.contextBlockingGaps,
       gapsHeader: p.contextGaps,
       alertsHeader: p.contextAlerts,
+      vfFieldLabels: { ...VF_FIELD_LABELS[locale] },
     });
     yield { type: "briefing", briefing: stub, audit: null };
   }

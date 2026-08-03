@@ -43,6 +43,38 @@ export const VF_REQUIRED_FIELDS = [
 
 export type VfFieldKey = (typeof VF_REQUIRED_FIELDS)[number];
 
+/** EN input aliases → canonical (PT) keys stored on the fact. */
+export const VF_KEY_ALIASES: Record<string, VfFieldKey> = {
+  valor_mensal: "valor_mensal",
+  n_clientes: "n_clientes",
+  o_que_exatamente_esta_sendo_cobrado: "o_que_exatamente_esta_sendo_cobrado",
+  isolado_ou_pacote: "isolado_ou_pacote",
+  meses_de_retencao: "meses_de_retencao",
+  monthly_value: "valor_mensal",
+  n_customers: "n_clientes",
+  what_exactly_is_charged: "o_que_exatamente_esta_sendo_cobrado",
+  standalone_or_bundle: "isolado_ou_pacote",
+  months_of_retention: "meses_de_retencao",
+};
+
+/** Display labels for agents/UI — keep canonical storage, localize the surface. */
+export const VF_FIELD_LABELS = {
+  en: {
+    valor_mensal: "monthly_value",
+    n_clientes: "n_customers",
+    o_que_exatamente_esta_sendo_cobrado: "what_exactly_is_charged",
+    isolado_ou_pacote: "standalone_or_bundle",
+    meses_de_retencao: "months_of_retention",
+  },
+  pt: {
+    valor_mensal: "valor_mensal",
+    n_clientes: "n_clientes",
+    o_que_exatamente_esta_sendo_cobrado: "o_que_exatamente_esta_sendo_cobrado",
+    isolado_ou_pacote: "isolado_ou_pacote",
+    meses_de_retencao: "meses_de_retencao",
+  },
+} as const satisfies Record<"en" | "pt", Record<VfFieldKey, string>>;
+
 export type FirstHandFields = {
   valor_mensal: string;
   n_clientes: string;
@@ -723,13 +755,14 @@ export type BriefingRenderLabels = {
   blockingGapsHeader: string;
   gapsHeader: string;
   alertsHeader: string;
+  /** Localized display names for VF sub-fields (canonical key → label). */
+  vfFieldLabels: Record<VfFieldKey, string>;
 };
 
 /**
  * Parse author textarea into structured [F-VF] / [F-VF?] facts.
- * Blocks separated by a blank line. Each block MUST supply every sub-field:
- *   valor_mensal / n_clientes / o_que_exatamente_esta_sendo_cobrado /
- *   isolado_ou_pacote / meses_de_retencao
+ * Blocks separated by a blank line. Each block MUST supply every sub-field
+ * (PT or EN keys accepted; stored under canonical PT keys).
  * Any missing sub-field → the whole fact is soft [F-VF?] (weighs as [P]).
  * Free-text without keys is incomplete by definition — no inference allowed.
  */
@@ -785,7 +818,7 @@ function emptyVfFields(): Record<VfFieldKey, string> {
   };
 }
 
-/** Accepts `key: value` lines; unknown keys ignored; free prose → all empty. */
+/** Accepts PT or EN `key: value` lines; unknown keys ignored; free prose → all empty. */
 export function parseVfBlock(block: string): Record<VfFieldKey, string> {
   const fields = emptyVfFields();
   const lines = block
@@ -793,19 +826,21 @@ export function parseVfBlock(block: string): Record<VfFieldKey, string> {
     .map((l) => l.replace(/^\[?\s*F-?VF\??\d*\s*\]?\s*/i, "").trim())
     .filter(Boolean);
 
+  const keyAlt = Object.keys(VF_KEY_ALIASES).join("|");
+  const keyRe = new RegExp(`^(${keyAlt})\\s*[:=]\\s*(.*)$`, "i");
+
   let sawKey = false;
   for (const line of lines) {
-    const m = line.match(
-      /^(valor_mensal|n_clientes|o_que_exatamente_esta_sendo_cobrado|isolado_ou_pacote|meses_de_retencao)\s*[:=]\s*(.*)$/i,
-    );
+    const m = line.match(keyRe);
     if (!m) continue;
     sawKey = true;
-    const key = m[1].toLowerCase() as VfFieldKey;
-    fields[key] = m[2].trim();
+    const canonical = VF_KEY_ALIASES[m[1].toLowerCase()];
+    if (!canonical) continue;
+    fields[canonical] = m[2].trim();
   }
 
   // A lone prose paragraph with no keys is incomplete — do not treat the
-  // whole text as valor_mensal or any other field.
+  // whole text as monthly_value / valor_mensal or any other field.
   if (!sawKey) return emptyVfFields();
   return fields;
 }
@@ -816,10 +851,13 @@ function formatVfClaim(
 ): string {
   const bits = VF_REQUIRED_FIELDS.map((k) => {
     const v = fields[k].trim();
-    return v ? `${k}=${v}` : `${k}=(ausente)`;
+    const label = VF_FIELD_LABELS.en[k];
+    return v ? `${label}=${v}` : `${label}=(missing)`;
   });
   const miss =
-    missing.length > 0 ? ` | incomplete: ${missing.join(", ")}` : "";
+    missing.length > 0
+      ? ` | incomplete: ${missing.map((k) => VF_FIELD_LABELS.en[k]).join(", ")}`
+      : "";
   return bits.join("; ") + miss;
 }
 
@@ -843,7 +881,8 @@ export function renderBriefingContext(
               ? "\n" +
                 VF_REQUIRED_FIELDS.map((k) => {
                   const v = f.vf?.[k]?.trim();
-                  return `  - ${k}: ${v || "(ausente)"}`;
+                  const label = labels.vfFieldLabels[k];
+                  return `  - ${label}: ${v || "(missing)"}`;
                 }).join("\n")
               : "";
             return `[${f.id}]${softNote}${detail || ` ${f.afirmacao}`}`;

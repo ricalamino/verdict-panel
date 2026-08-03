@@ -12,10 +12,12 @@ system SOURCE ALERTS.
   [P]      = your own qualitative reasoning or inference
   [E]      = your own numeric estimate
 - Hierarchy: [F-VF] > [F] > [F?] ≈ [F-VF?] ≈ [P] > [E]. Discard unmarked claims.
-- [F-VF] requires ALL of: valor_mensal, n_clientes, o_que_exatamente_esta_sendo_cobrado,
-  isolado_ou_pacote, meses_de_retencao. A missing sub-field demotes the whole
-  fact to [F-VF?] (= [P]). No agent may infer a missing sub-field from wording,
-  context, or the absence of a contrary mention.
+- [F-VF] requires ALL of: monthly_value, n_customers, what_exactly_is_charged,
+  standalone_or_bundle, months_of_retention (Portuguese keys also accepted:
+  valor_mensal, n_clientes, o_que_exatamente_esta_sendo_cobrado, isolado_ou_pacote,
+  meses_de_retencao). A missing sub-field demotes the whole fact to [F-VF?] (= [P]).
+  No agent may infer a missing sub-field from wording, context, or the absence
+  of a contrary mention.
 - [F?], [F-VF?] and [P] do NOT support GO/PIVOT.
 - An [E] is NEVER a central argument. Third-party numbers only as [F]/[F-VF].
 - Absence of an assertion is not evidence of the negative. Silence in the

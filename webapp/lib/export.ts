@@ -43,7 +43,9 @@ export function buildExportText(opts: {
             "isolado_ou_pacote",
             "meses_de_retencao",
           ] as const) {
-            lines.push(`  ${k}: ${f.vf[k]?.trim() || "(ausente)"}`);
+            lines.push(
+              `  ${t.vfFieldLabels[k]}: ${f.vf[k]?.trim() || "(missing)"}`,
+            );
           }
         } else {
           lines.push(`[${f.id}] ${f.afirmacao}`);

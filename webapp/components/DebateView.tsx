@@ -108,14 +108,14 @@ export function BriefingView({ briefing, audit, t }: BriefingProps) {
                               key={k}
                               className={!v ? "vf-field-missing" : undefined}
                             >
-                              <span className="vf-key">{k}:</span>{" "}
-                              {v || "(ausente)"}
+                              <span className="vf-key">{t.vfFieldLabels[k]}:</span>{" "}
+                              {v || "(missing)"}
                             </li>
                           );
                         })}
                         {f.soft && (
                           <li className="vf-field-missing">
-                            soft [F-VF?] — vale [P]; sem inferir ausentes
+                            soft [F-VF?] — weighs as [P]; do not infer missing fields
                           </li>
                         )}
                       </ul>
