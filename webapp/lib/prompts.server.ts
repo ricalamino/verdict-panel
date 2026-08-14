@@ -90,14 +90,24 @@ const AXIS_PT: Record<ResearchAxisId, AxisCopy> = {
   },
   pagamento: {
     brief:
-      "EIXO C — EVIDÊNCIA DE PAGAMENTO + PRIOR ART.\n" +
-      "Prova de que alguém paga por isso hoje (planos, cases, contratos, reviews).\n" +
-      "Alguém já tentou e morreu? Postmortem, 'encerramos', 'shutting down'.\n" +
-      "Ausência de evidência de pagamento é um achado — registre em lacunas,\n" +
-      "não invente. Só vira lacuna_bloqueante se NÃO houver sequer sinal fraco\n" +
-      "E a tese do produto depende de receita recorrente comprovável agora.",
+      "EIXO C — EVIDÊNCIA DE PAGAMENTO (JOB-TO-BE-DONE) + PRIOR ART.\n" +
+      "NÃO busque se alguém cobra pelo slogan/diferencial do autor\n" +
+      "(ex.: 'agente consultor embutido'). Greenfield quase nunca tem preço\n" +
+      "público do wedge — isso é lacuna, não morte.\n" +
+      "1) Extraia o JOB: o trabalho que o ICP já paga para ter feito hoje\n" +
+      "(ferramenta, agência, implementação, freelancer, headcount).\n" +
+      "2) Busque prova de que alguém PAGA por esse job: SaaS da categoria,\n" +
+      "agência, setup fee, retainer, marketplace de implementação, review\n" +
+      "de cliente pagante. Esse é o sinal load-bearing.\n" +
+      "3) Alguém já tentou um produto parecido e morreu? Postmortem,\n" +
+      "'encerramos', 'shutting down'.\n" +
+      "Ausência de pagamento pelo WEDGE → lacuna (não bloqueante).\n" +
+      "Ausência de pagamento pela CATEGORIA/job → lacuna; só vira\n" +
+      "lacuna_bloqueante se NÃO houver sequer sinal fraco E a tese depende\n" +
+      "de receita recorrente comprovável agora.",
     schema: `{
   "mercado": { "pais": "", "idioma_busca": "", "termos_usados": [] },
+  "job": { "enunciado": "", "como_o_icp_paga_hoje": "" },
   "execucao": { "4_pagamento_prior_art": [] },
   "evidencia_de_pagamento": [ { "afirmacao": "", "fonte": "" } ],
   "prior_art": [ { "nome": "", "desfecho": "", "fonte": "" } ],
@@ -156,14 +166,24 @@ const AXIS_EN: Record<ResearchAxisId, AxisCopy> = {
   },
   pagamento: {
     brief:
-      "AXIS C — EVIDENCE OF PAYMENT + PRIOR ART.\n" +
-      "Proof someone pays today (plans, case studies, contracts, reviews).\n" +
-      "Has anyone tried and died? Postmortem, 'shutting down', 'discontinued'.\n" +
-      "Absence of payment evidence is a finding — record it in lacunas, do not\n" +
-      "invent. It is lacuna_bloqueante ONLY if there is not even a weak signal\n" +
-      "AND the product thesis depends on proven recurring revenue right now.",
+      "AXIS C — EVIDENCE OF PAYMENT (JOB-TO-BE-DONE) + PRIOR ART.\n" +
+      "Do NOT search whether anyone charges for the author's slogan/\n" +
+      "differentiator (e.g. 'embedded AI consultant'). Greenfield almost\n" +
+      "never has a public wedge price — that is a gap, not a kill.\n" +
+      "1) Extract the JOB: the work the ICP already pays to get done today\n" +
+      "(tool, agency, implementation, freelancer, headcount).\n" +
+      "2) Find proof someone PAYS for that job: category SaaS, agency,\n" +
+      "setup fee, retainer, implementation marketplace, paying-customer\n" +
+      "review. That is the load-bearing signal.\n" +
+      "3) Has anyone tried a similar product and died? Postmortem,\n" +
+      "'shutting down', 'discontinued'.\n" +
+      "No payment for the WEDGE → gap (not blocking).\n" +
+      "No payment for the CATEGORY/job → gap; it is lacuna_bloqueante ONLY\n" +
+      "if there is not even a weak signal AND the thesis depends on proven\n" +
+      "recurring revenue right now.",
     schema: `{
   "mercado": { "pais": "", "idioma_busca": "", "termos_usados": [] },
+  "job": { "enunciado": "", "como_o_icp_paga_hoje": "" },
   "execucao": { "4_pagamento_prior_art": [] },
   "evidencia_de_pagamento": [ { "afirmacao": "", "fonte": "" } ],
   "prior_art": [ { "nome": "", "desfecho": "", "fonte": "" } ],

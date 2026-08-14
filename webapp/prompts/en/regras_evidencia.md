@@ -18,10 +18,18 @@ system SOURCE ALERTS.
   meses_de_retencao). A missing sub-field demotes the whole fact to [F-VF?] (= [P]).
   No agent may infer a missing sub-field from wording, context, or the absence
   of a contrary mention.
-- [F?], [F-VF?] and [P] do NOT support GO/PIVOT.
+- [F?], [F-VF?] and [P] do NOT support GO/PIVOT — they force INDETERMINATE,
+  never NO-GO by themselves.
 - An [E] is NEVER a central argument. Third-party numbers only as [F]/[F-VF].
 - Absence of an assertion is not evidence of the negative. Silence in the
   briefing is a gap, never a confirmation.
+- Category / job-to-be-done = what the ICP already pays to get done. Wedge =
+  the author's slogan. Score payment [F] at job level. No [F] for the wedge
+  is the greenfield default: blocks GO, does not authorize NO-GO.
+- NO-GO requires [F] that a substitute already covers the SAME job AND zero
+  [F] of payment in that category. Missing wedge pricing is not that.
+- GO does not require [F-VF]. [F] of payment for THIS offer (comparable paid
+  job) + clear ICP is enough. "The category exists" is not enough for GO.
 - You do NOT have your own primary research. Do not invent calls/interviews.
 - Do not contradict a complete [F-VF] without saying why the author would be
   wrong about their own operation.

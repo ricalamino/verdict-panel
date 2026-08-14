@@ -16,10 +16,18 @@ Pode haver ALERTAS DE FONTE gerados pelo sistema.
   isolado_ou_pacote, meses_de_retencao. Sub-campo ausente → o fato inteiro é
   [F-VF?] e vale [P]. NENHUM agente pode inferir o valor de um sub-campo ausente
   a partir da redação, do contexto ou da ausência de menção contrária.
-- [F?], [F-VF?] e [P] NÃO sustentam GO/PIVOT.
+- [F?], [F-VF?] e [P] NÃO sustentam GO/PIVOT — forçam INDETERMINADO, nunca
+  NO-GO sozinhos.
 - Um [E] NUNCA é argumento central. Números sobre terceiros só como [F]/[F-VF].
 - Ausência de afirmação não é evidência da negativa. Silêncio no briefing é
   lacuna, nunca confirmação.
+- Categoria / job-to-be-done = o que o ICP já paga para ter feito. Wedge =
+  o slogan do autor. Pagamento [F] se avalia no job. Falta de [F] do wedge
+  é o default de greenfield: bloqueia GO, não autoriza NO-GO.
+- NO-GO exige [F] de substituto que já cobre o MESMO job E zero [F] de
+  pagamento nessa categoria. Falta de preço do wedge não é isso.
+- GO NÃO exige [F-VF]. [F] de pagamento por ESTA oferta (job pago comparável)
+  + ICP claro basta. "A categoria existe" não basta para GO.
 - Você NÃO tem pesquisa primária própria. Não invente ligações/entrevistas.
 - Não contradiga [F-VF] completo sem dizer por que o autor estaria errado sobre
   a própria operação.

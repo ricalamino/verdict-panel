@@ -431,6 +431,7 @@ export function mergeBriefings(parts: Briefing[]): Briefing {
   const lacunas_bloqueantes: string[] = [];
   const execucao: Record<string, string[]> = {};
   let mercado: unknown;
+  let job: unknown;
   let preco_ancora: Briefing["preco_ancora"];
   let incumbentes: unknown[] = [];
   let substitutos_gratuitos: unknown[] = [];
@@ -444,6 +445,7 @@ export function mergeBriefings(parts: Briefing[]): Briefing {
     lacunas_bloqueantes.push(...(p.lacunas_bloqueantes ?? []));
     Object.assign(execucao, normalizeExecucao(p.execucao));
     if (!mercado && p.mercado) mercado = p.mercado;
+    if (!job && p.job) job = p.job;
     if (
       !preco_ancora?.valor &&
       p.preco_ancora &&
@@ -469,6 +471,7 @@ export function mergeBriefings(parts: Briefing[]): Briefing {
 
   return {
     mercado: mercado ?? { pais: "", idioma_busca: "", termos_usados: [] },
+    job,
     execucao,
     incumbentes,
     substitutos_gratuitos,
@@ -867,6 +870,23 @@ export function renderBriefingContext(
   labels: BriefingRenderLabels,
 ): string {
   const parts: string[] = [];
+
+  const job = briefing.job;
+  if (job && typeof job === "object" && !Array.isArray(job)) {
+    const j = job as Record<string, unknown>;
+    const enunciado = typeof j.enunciado === "string" ? j.enunciado.trim() : "";
+    const paga =
+      typeof j.como_o_icp_paga_hoje === "string"
+        ? j.como_o_icp_paga_hoje.trim()
+        : "";
+    if (enunciado) {
+      parts.push(
+        `### JOB (category / job-to-be-done — score payment here, not on the wedge)\n` +
+          `${enunciado}` +
+          (paga ? `\nHow ICP pays today: ${paga}` : ""),
+      );
+    }
+  }
 
   const vf = briefing.fatos_vf ?? [];
   if (vf.length) {

@@ -88,7 +88,7 @@ export type Messages = {
 const en: Messages = {
   brand: "Panel",
   title: "Adversarial project validation",
-  lede: "Advocate, Prosecutor, and Market Skeptic debate. The judge issues GO / NO-GO / PIVOT — fragile hypotheses to test with humans, not another AI.",
+  lede: "Advocate, Prosecutor, and Market Skeptic debate. The judge issues GO / NO-GO / PIVOT / INDETERMINATE — fragile hypotheses to test with humans, not another AI.",
   apiKeyLabel: "Anthropic API Key",
   show: "Show",
   hide: "Hide",
@@ -191,7 +191,7 @@ Budget / time available: [e.g. 5–10h/week, $0 on ads]`,
 const pt: Messages = {
   brand: "Painel",
   title: "Validação adversarial de projetos",
-  lede: "Advogado, Promotor e Cético debatem. O juiz emite GO / NO-GO / PIVOT — hipóteses frágeis pra testar com humanos, não com outra IA.",
+  lede: "Advogado, Promotor e Cético debatem. O juiz emite GO / NO-GO / PIVOT / INDETERMINADO — hipóteses frágeis pra testar com humanos, não com outra IA.",
   apiKeyLabel: "Anthropic API Key",
   show: "Mostrar",
   hide: "Ocultar",

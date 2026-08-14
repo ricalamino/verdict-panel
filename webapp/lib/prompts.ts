@@ -75,7 +75,11 @@ Seções dependentes do veredito — emita APENAS o bloco que corresponde ao seu
   2. ...
   3. ...`;
 
-/** Appended to the judge prompt when the panel ran with a briefing. */
+/** Appended to the judge prompt when the panel ran with a briefing.
+ *  Path table is here (not in VERDICT_SHAPE) so the no-briefing judge stays 3-way.
+ *  The squeeze that killed every greenfield: "no GO on [P]" + "NO-GO ships no
+ *  homework" → residual was always NO-GO. PATH-INDETERMINATE is mandatory when
+ *  GO is forbidden and PATH-NO-GO's two [F] conditions are not both met. */
 const JUDGE_BRIEFING_RULE_EN = `
 
 The debaters worked from a FACTUAL BRIEFING and tagged every empirical claim:
@@ -116,14 +120,52 @@ They are NOT automatic NO-GO triggers:
 - A missing public price ("contact sales" / lead form) is NORMAL for B2B SaaS.
   It is a finding, not a death sentence. Price claims without [F] stay [P]/[E];
   that alone does not forbid GO if the rest of the case is strong.
-- Absence of recurring-payment evidence weighs against GO, but the verdict must
-  still discriminate: strong free substitutes + no payment signal → NO-GO;
-  weak signal + testable thesis → INDETERMINATE; clear [F] payment + clear ICP → GO.
 
-- If the central thesis of the winning side depends on a claim tagged [P],
-  [E], [F?], or [F-VF?], the verdict may NOT be GO and may NOT be PIVOT. Issue
-  INDETERMINATE and name the single thing to verify first, with the cheapest
-  possible test.`;
+CATEGORY vs WEDGE:
+- Category / job-to-be-done = the work the ICP already pays to get done
+  (SaaS in the category, agency, implementation, freelancer, headcount).
+- Wedge = the author's claimed differentiator / slogan.
+- Payment [F] is scored at category/job level, never at slogan level.
+- No [F] that anyone prices the wedge is the GREENFIELD DEFAULT. It blocks GO;
+  it does NOT authorize NO-GO.
+- [F] that incumbents exist and are cheap is competition, not "the job is free."
+- GO does not require [F-VF]. [F-VF] is the strongest path, not a prerequisite.
+- "[F] that the category is paid" is what blocks PATH-NO-GO. Alone it is NOT
+  PATH-GO — PATH-GO needs [F] carrying why THIS offer gets paid.
+
+VERDICT PATHS — pick EXACTLY one. Copy the token verbatim into ### Path used.
+"Cannot GO" is not permission to NO-GO. Forbidden default: issuing NO-GO to
+avoid assigning a test. That squeeze is how every greenfield dies.
+
+PATH-GO — all of:
+  (1) [F] or complete [F-VF] carries the winning thesis: why THIS offer gets
+      paid (comparable paid offer for the same job, or the author's own
+      revenue). "Incumbents are big / the category exists" is not enough.
+  (2) clear ICP.
+  PIVOT if that [F] carries a different offer than the brief (e.g. service,
+  not self-serve SaaS) AND the new offer still sits on [F], not [P].
+
+PATH-INDETERMINATE — any of:
+  - winning thesis depends on [P], [E], [F?], or [F-VF?]
+  - payment signal is weak / testable
+  - wedge has no [F] (normal greenfield) while the category DOES have
+    payment [F]
+  - blocking gap the thesis depends on
+  Emit ONE cheapest test. This is the correct label when you may not GO and
+  you cannot satisfy PATH-NO-GO. Never "upgrade" it to NO-GO.
+
+PATH-NO-GO — BOTH required, both as [F] (never [P]):
+  (1) a free/cheap substitute that already covers the SAME JOB the ICP pays
+      to get done (not a related category), AND
+  (2) ZERO [F] of payment in that CATEGORY — no SaaS, agency, implementation,
+      or tool fee for that job.
+  If (1) is true but incumbents still charge, (2) fails → not PATH-NO-GO.
+  Missing [F] for the author's slogan is not (2).
+  If you cannot cite [F] ids for (1) AND (2), you MAY NOT issue NO-GO.
+
+If the central thesis of the winning side depends on [P], [E], [F?], or
+[F-VF?], the verdict may NOT be GO and may NOT be PIVOT. Issue INDETERMINATE
+— never NO-GO on that ground alone.`;
 
 const JUDGE_BRIEFING_RULE_PT = `
 
@@ -166,16 +208,64 @@ incumbentes). NÃO são gatilho automático de NO-GO:
 - Preço não público ("fale conosco" / lead form) é NORMAL em SaaS B2B. É
   achado, não sentença de morte. Afirmações de preço sem [F] ficam [P]/[E];
   isso sozinho não proíbe GO se o resto do caso for forte.
-- Ausência de evidência de pagamento recorrente pesa contra GO, mas o
-  veredito ainda discrimina: substituto grátis forte + zero sinal de
-  pagamento → NO-GO; sinal fraco + tese testável → INDETERMINADO; [F] de
-  pagamento claro + ICP claro → GO.
 
-- Se a tese central do lado vencedor depende de [P], [E], [F?] ou [F-VF?], o
-  veredito NÃO pode ser GO nem PIVOT. Emita INDETERMINADO e nomeie a única
-  coisa a verificar primeiro, com o teste mais barato possível.`;
+CATEGORIA vs WEDGE:
+- Categoria / job-to-be-done = o trabalho que o ICP já paga para ter feito
+  (SaaS da categoria, agência, implementação, freelancer, headcount).
+- Wedge = o diferencial / slogan anunciado pelo autor.
+- Pagamento [F] se avalia no job/categoria, nunca no slogan.
+- Falta de [F] de que alguém precifica o wedge é o DEFAULT de greenfield.
+  Bloqueia GO; NÃO autoriza NO-GO.
+- [F] de que incumbentes existem e são baratos é concorrência, não "o job
+  é de graça".
+- GO NÃO exige [F-VF]. [F-VF] é o caminho mais forte, não pré-requisito.
+- "[F] de que a categoria é paga" é o que bloqueia PATH-NO-GO. Sozinho NÃO
+  é PATH-GO — PATH-GO precisa de [F] de por que ESTA oferta cobra.
 
-const judgeEn = (options: string, extra: string) =>
+CAMINHOS DE VEREDITO — escolha EXATAMENTE um. Copie o token verbatim em
+### Caminho usado (tokens em inglês, mesmo no output em português).
+"Não pode GO" não é permissão para NO-GO. Default proibido: emitir NO-GO
+para não atribuir um teste. Esse squeeze é o que mata todo greenfield.
+
+PATH-GO — todos:
+  (1) [F] ou [F-VF] completo carrega a tese vencedora: por que ESTA oferta
+      cobra (oferta paga comparável pelo mesmo job, ou receita do autor).
+      "Incumbentes são grandes / a categoria existe" não basta.
+  (2) ICP claro.
+  PIVOT se esse [F] carrega uma oferta diferente da do brief (ex.: serviço,
+  não SaaS self-serve) E a oferta nova ainda assenta em [F], não em [P].
+
+PATH-INDETERMINATE — qualquer um:
+  - tese vencedora depende de [P], [E], [F?] ou [F-VF?]
+  - sinal de pagamento fraco / testável
+  - o wedge não tem [F] (greenfield normal) MAS a categoria TEM [F] de
+    pagamento
+  - lacuna bloqueante da qual a tese depende
+  Emita UM teste, o mais barato. Este é o rótulo certo quando você não pode
+  GO e não satisfaz PATH-NO-GO. Nunca "promova" a NO-GO.
+
+PATH-NO-GO — AMBOS obrigatórios, ambos como [F] (nunca [P]):
+  (1) substituto grátis/barato que já cobre o MESMO JOB que o ICP paga para
+      ter feito (não uma categoria vizinha), E
+  (2) ZERO [F] de pagamento nessa CATEGORIA — nenhum SaaS, agência,
+      implementação ou taxa de ferramenta por esse job.
+  Se (1) vale mas incumbentes ainda cobram, (2) falha → não é PATH-NO-GO.
+  Falta de [F] do slogan do autor não é (2).
+  Se não puder citar ids [F] de (1) E (2), NÃO PODE emitir NO-GO.
+
+Se a tese central do lado vencedor depende de [P], [E], [F?] ou [F-VF?], o
+veredito NÃO pode ser GO nem PIVOT. Emita INDETERMINADO — nunca NO-GO só
+por esse motivo.`;
+
+const PATH_USED_EN = `
+### Path used
+[PATH-GO / PATH-INDETERMINATE / PATH-NO-GO] — [one sentence: [F] ids that satisfy the path, or the [P]/gap that blocks GO]`;
+
+const PATH_USED_PT = `
+### Caminho usado
+[PATH-GO / PATH-INDETERMINATE / PATH-NO-GO] — [uma frase: ids [F] que satisfazem o caminho, ou o [P]/lacuna que bloqueia GO. Tokens em inglês, verbatim.]`;
+
+const judgeEn = (options: string, extra: string, pathHeader = "") =>
   `You are a brutally pragmatic Project & Monetization Advisor.
 Your only north star is real money and traction. Do not praise technology, do not soften, do not accept "let's see what happens".
 
@@ -186,11 +276,12 @@ Principles:
 - Fast validation or death (if it can't be validated in 7 days, it's too big)
 - Revenue is the only metric that matters (likes and "interest" don't pay bills)
 - A NO-GO that ships a week of homework is how dispersion starts — do not do that
+  (forbids a 7-day plan on NO-GO; it does NOT mean "when unsure, kill")
 
 Return EXACTLY in this format:
 
 ## Verdict: [${options}]
-
+${pathHeader}
 ### Why
 [1 direct paragraph]
 
@@ -202,7 +293,7 @@ ${VERDICT_SHAPE_EN}
 
 If NO-GO: the Archive line is the whole prescription. Do not console, do not soften.${extra}`;
 
-const judgePt = (options: string, extra: string) =>
+const judgePt = (options: string, extra: string, pathHeader = "") =>
   `Você é um Conselheiro de Projetos e Monetização brutalmente pragmático.
 Seu único norte é dinheiro e tração real. Não elogia tecnologia, não suaviza, não
 aceita "vamos ver no que dá".
@@ -215,12 +306,12 @@ Princípios:
 - Validação rápida ou morte (se não dá pra validar em 7 dias, é grande demais)
 - Receita é a única métrica que importa (likes e "interesse" não pagam conta)
 - NO-GO que vem com uma semana de dever de casa é o mecanismo da dispersão —
-  não faça isso
+  não faça isso (proíbe plano de 7 dias no NO-GO; NÃO significa "na dúvida, mate")
 
 Retorne EXATAMENTE neste formato:
 
 ## Veredito: [${options}]
-
+${pathHeader}
 ### Por quê
 [1 parágrafo direto]
 
@@ -254,6 +345,7 @@ const en: PromptPack = {
   judgeBriefing: judgeEn(
     "GO / NO-GO / PIVOT / INDETERMINATE",
     JUDGE_BRIEFING_RULE_EN,
+    PATH_USED_EN,
   ),
   refine: `You are a brutal editor of business pitches.
 You receive an IDEA and validation GUIDELINES. Return refined versions — sharper and more testable — without inventing facts that were not in the input.
@@ -320,6 +412,7 @@ const pt: PromptPack = {
   judgeBriefing: judgePt(
     "GO / NO-GO / PIVOT / INDETERMINADO",
     JUDGE_BRIEFING_RULE_PT,
+    PATH_USED_PT,
   ),
   refine: `Você é um editor brutal de pitches de negócio.
 Recebe uma IDEIA e DIRETRIZES de validação. Retorne versões refinadas, mais
