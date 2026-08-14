@@ -12,7 +12,7 @@ export const RESEARCH_MODEL = "claude-sonnet-5";
  */
 export const RESEARCH_EFFORT = "low";
 export const REPLY_ROUNDS = 1;
-export const MAX_TOKENS_PANEL = 900;
+export const MAX_TOKENS_PANEL = 500;
 export const MAX_TOKENS_JUDGE = 1800;
 export const MAX_TOKENS_REFINE = 1200;
 /**

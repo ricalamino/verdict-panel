@@ -323,23 +323,36 @@ ${VERDICT_SHAPE_PT}
 
 Se NO-GO: a Linha de arquivo é a prescrição inteira. Não console, não suavize.${extra}`;
 
+const ROLE_DISCIPLINE_EN =
+  " Do NOT issue a verdict (no GO, NO-GO, PIVOT, INDETERMINATE, PATH-*, " +
+  "'preliminary verdict'). That is the Judge's job only. Stay in your role — " +
+  "never write as another role. No tables. Exactly 6 short bullets, nothing else.";
+
+const ROLE_DISCIPLINE_PT =
+  " NÃO emita veredito (sem GO, NO-GO, PIVOT, INDETERMINADO, PATH-*, " +
+  "'veredito preliminar'). Isso é só do Juiz. Permaneça no seu papel — " +
+  "nunca escreva como outro papel. Sem tabelas. Exatamente 6 bullets curtos, " +
+  "nada mais.";
+
 const en: PromptPack = {
   roles: {
     advocate:
       "You are the Advocate for this idea. Build the strongest possible case to " +
       "BUILD this project: who pays, why they would pay, the shortest path to revenue, " +
       "what unfair advantage the author has. Be specific and commercial, not empty optimism. " +
-      "No technical fluff. Max 6 short bullets.",
+      "No technical fluff." +
+      ROLE_DISCIPLINE_EN,
     prosecutor:
       "You are the Prosecutor. Your job is to KILL the idea. Why will nobody pay? " +
       "Where is the market saturated or already solved for free? What CAC makes it unviable? " +
       "Which fragile assumption collapses everything? Be brutal and concrete. " +
-      "'This won't sell' is a valid answer if justified. Max 6 short bullets.",
+      "'This won't sell' is a valid answer if justified." +
+      ROLE_DISCIPLINE_EN,
     skeptic:
       "You are the Market Skeptic. Focus on ONE point: where the demand signal is fake. " +
       "Distinguish stated interest from paying behavior. Point out where the author may confuse " +
-      "'sounds cool' with 'I'll pay'. Name the cheapest experiment that would prove or disprove real demand. " +
-      "Max 6 short bullets.",
+      "'sounds cool' with 'I'll pay'. Name the cheapest experiment that would prove or disprove real demand." +
+      ROLE_DISCIPLINE_EN,
   },
   judge: judgeEn("GO / NO-GO / PIVOT", ""),
   judgeBriefing: judgeEn(
@@ -368,15 +381,16 @@ Return EXACTLY in this format (no extra markdown outside the blocks):
   contextGuidelines: "GUIDELINES & CONTEXT",
   contextBriefing: "FACTUAL BRIEFING (cite these by ID)",
   contextFirstHand: "FIRST-HAND AUTHOR FACTS [F-VF] (complete only; [F-VF?] = [P])",
-  contextBlockingGaps: "BLOCKING GAPS (only if thesis depends on them → no GO/PIVOT)",
+  contextBlockingGaps: "BLOCKING GAPS (only weaken a thesis that depends on them)",
   contextGaps: "UNVERIFIED",
   contextAlerts: "SOURCE ALERTS (discount these clusters)",
   briefingEmpty:
     "(The researcher verified nothing. Every empirical claim below is therefore [P].)",
-  openAsk: "Present your opening position.",
+  openAsk:
+    "Present your opening position. Exactly 6 short bullets. Do NOT issue a verdict.",
   debateSoFar: "DEBATE SO FAR",
   replyAsk:
-    "Respond to the others. Attack weak points in their arguments and strengthen yours. Do not repeat what you already said.",
+    "Respond to the others. Attack weak points in their arguments and strengthen yours. Do not repeat what you already said. Stay in YOUR role. Exactly 6 short bullets. Do NOT issue a verdict.",
   fullDebate: "FULL DEBATE",
   verdictAsk: "Issue the final verdict.",
   researchRound: "Market research",
@@ -393,20 +407,20 @@ const pt: PromptPack = {
       "Você é o Advogado da ideia. Construa o melhor caso possível para " +
       "CONSTRUIR este projeto: quem paga, por que pagaria, qual o caminho " +
       "mais curto para receita, qual vantagem injusta o autor tem. " +
-      "Seja específico e comercial, não otimista vazio. Sem floreio técnico. " +
-      "Máximo 6 bullets curtos.",
+      "Seja específico e comercial, não otimista vazio. Sem floreio técnico." +
+      ROLE_DISCIPLINE_PT,
     prosecutor:
       "Você é o Promotor. Seu trabalho é MATAR a ideia. Por que ninguém vai " +
       "pagar? Onde o mercado já está saturado ou resolvido de graça? Qual o " +
       "custo de aquisição que inviabiliza? Que suposição frágil derruba tudo? " +
-      "Seja brutal e concreto. 'Isso não vende' é resposta válida se justificada. " +
-      "Máximo 6 bullets curtos.",
+      "Seja brutal e concreto. 'Isso não vende' é resposta válida se justificada." +
+      ROLE_DISCIPLINE_PT,
     skeptic:
       "Você é o Cético de Mercado. Foque em UM ponto: onde o sinal de demanda " +
       "é falso. Distinga interesse declarado de comportamento de pagamento. " +
       "Aponte onde o autor pode estar confundindo 'acho legal' com 'vou pagar'. " +
-      "Aponte o experimento mais barato que provaria ou refutaria a demanda real. " +
-      "Máximo 6 bullets curtos.",
+      "Aponte o experimento mais barato que provaria ou refutaria a demanda real." +
+      ROLE_DISCIPLINE_PT,
   },
   judge: judgePt("GO / NO-GO / PIVOT", ""),
   judgeBriefing: judgePt(
@@ -436,15 +450,16 @@ Retorne EXATAMENTE neste formato (sem markdown extra fora dos blocos):
   contextGuidelines: "DIRETRIZES E CONTEXTO",
   contextBriefing: "BRIEFING FACTUAL (cite por ID)",
   contextFirstHand: "FATOS DE PRIMEIRA MÃO [F-VF] (só completo; [F-VF?] = [P])",
-  contextBlockingGaps: "LACUNAS BLOQUEANTES (só se a tese depender delas → sem GO/PIVOT)",
+  contextBlockingGaps: "LACUNAS BLOQUEANTES (só enfraquecem tese que depender delas)",
   contextGaps: "NÃO VERIFICADO",
   contextAlerts: "ALERTAS DE FONTE (desconte estes clusters)",
   briefingEmpty:
     "(O pesquisador não verificou nada. Toda afirmação empírica abaixo é, portanto, [P].)",
-  openAsk: "Apresente sua posição de abertura.",
+  openAsk:
+    "Apresente sua posição de abertura. Exatamente 6 bullets curtos. NÃO emita veredito.",
   debateSoFar: "DEBATE ATÉ AGORA",
   replyAsk:
-    "Responda aos outros. Ataque os pontos fracos dos argumentos deles e fortaleça o seu. Não repita o que já disse.",
+    "Responda aos outros. Ataque os pontos fracos dos argumentos deles e fortaleça o seu. Não repita o que já disse. Permaneça no SEU papel. Exatamente 6 bullets curtos. NÃO emita veredito.",
   fullDebate: "DEBATE COMPLETO",
   verdictAsk: "Emita o veredito final.",
   researchRound: "Pesquisa de mercado",
