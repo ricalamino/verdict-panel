@@ -12,6 +12,10 @@ export type Messages = {
   title: string;
   lede: string;
   apiKeyLabel: string;
+  workspaceIdLabel: string;
+  workspaceIdPlaceholder: string;
+  workspaceIdHint: string;
+  errNeedWorkspace: string;
   show: string;
   hide: string;
   save: string;
@@ -90,6 +94,12 @@ const en: Messages = {
   title: "Adversarial project validation",
   lede: "Advocate, Prosecutor, and Market Skeptic debate. The judge issues GO / NO-GO / PIVOT / INDETERMINATE — fragile hypotheses to test with humans, not another AI.",
   apiKeyLabel: "Anthropic API Key",
+  workspaceIdLabel: "Workspace ID (identity-linked keys)",
+  workspaceIdPlaceholder: "wrkspc_...",
+  workspaceIdHint:
+    "Required for personal/service-account keys that aren't scoped to one workspace. Console → Settings → Workspaces → ID column. Skip if your key is workspace-scoped.",
+  errNeedWorkspace:
+    "This key is identity-linked. Paste the workspace ID (Console → Settings → Workspaces) or create a key scoped to one workspace.",
   show: "Show",
   hide: "Hide",
   save: "Save",
@@ -193,6 +203,12 @@ const pt: Messages = {
   title: "Validação adversarial de projetos",
   lede: "Advogado, Promotor e Cético debatem. O juiz emite GO / NO-GO / PIVOT / INDETERMINADO — hipóteses frágeis pra testar com humanos, não com outra IA.",
   apiKeyLabel: "Anthropic API Key",
+  workspaceIdLabel: "Workspace ID (keys identity-linked)",
+  workspaceIdPlaceholder: "wrkspc_...",
+  workspaceIdHint:
+    "Obrigatório pra keys pessoais/service-account que não estão scoped a um workspace. Console → Settings → Workspaces → coluna ID. Pula se a key já é workspace-scoped.",
+  errNeedWorkspace:
+    "Essa key é identity-linked. Cola o workspace ID (Console → Settings → Workspaces) ou cria uma key scoped a um workspace.",
   show: "Mostrar",
   hide: "Ocultar",
   save: "Salvar",

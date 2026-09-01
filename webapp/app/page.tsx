@@ -23,6 +23,7 @@ export default function HomePage() {
   const [locale, setLocale] = useState<Locale>(DEFAULT_LOCALE);
   const [hydrated, setHydrated] = useState(false);
   const [apiKey, setApiKey] = useState("");
+  const [workspaceId, setWorkspaceId] = useState("");
   const [idea, setIdea] = useState(() => getMessages(DEFAULT_LOCALE).defaultIdea);
   const [guidelines, setGuidelines] = useState(
     () => getMessages(DEFAULT_LOCALE).defaultGuidelines,
@@ -67,7 +68,10 @@ export default function HomePage() {
     document.documentElement.lang = next === "pt" ? "pt-BR" : "en";
   }
 
-  const onReady = useCallback((key: string) => setApiKey(key), []);
+  const onReady = useCallback((key: string, ws: string) => {
+    setApiKey(key);
+    setWorkspaceId(ws);
+  }, []);
 
   async function refine() {
     if (!apiKey) {
@@ -82,11 +86,16 @@ export default function HomePage() {
         headers: {
           "Content-Type": "application/json",
           "x-api-key": apiKey,
+          ...(workspaceId ? { "x-anthropic-workspace-id": workspaceId } : {}),
         },
         body: JSON.stringify({ idea, guidelines, locale }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || t.errRefine);
+      if (!res.ok) {
+        throw new Error(
+          data.needWorkspace ? t.errNeedWorkspace : data.error || t.errRefine,
+        );
+      }
       setIdea(data.idea);
       setGuidelines(data.guidelines);
     } catch (e) {
@@ -124,6 +133,7 @@ export default function HomePage() {
         headers: {
           "Content-Type": "application/json",
           "x-api-key": apiKey,
+          ...(workspaceId ? { "x-anthropic-workspace-id": workspaceId } : {}),
         },
         body: JSON.stringify({
           idea,
@@ -169,7 +179,11 @@ export default function HomePage() {
             setVerdict(event.text);
             setCurrentRound(null);
           }
-          if (event.type === "error") throw new Error(event.message);
+          if (event.type === "error") {
+            throw new Error(
+              event.needWorkspace ? t.errNeedWorkspace : event.message,
+            );
+          }
         }
       }
     } catch (e) {

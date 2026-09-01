@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isLocale } from "@/lib/i18n";
-import { runPanel } from "@/lib/panel";
+import { isWorkspaceIdRequiredError, runPanel } from "@/lib/panel";
 
 export const runtime = "nodejs";
 // Research alone can take ~2–3 min; debate after that. Was 300 and killed
@@ -9,6 +9,8 @@ export const maxDuration = 600;
 
 export async function POST(req: NextRequest) {
   const apiKey = req.headers.get("x-api-key")?.trim();
+  const workspaceId =
+    req.headers.get("x-anthropic-workspace-id")?.trim() || undefined;
   if (!apiKey) {
     return NextResponse.json({ error: "Missing API key" }, { status: 401 });
   }
@@ -65,6 +67,7 @@ export async function POST(req: NextRequest) {
           body.skipResearch === true,
           req.signal,
           firstHandEvidence,
+          workspaceId,
         )) {
           send(event);
         }
@@ -73,7 +76,11 @@ export async function POST(req: NextRequest) {
         if (!req.signal.aborted) {
           const message =
             err instanceof Error ? err.message : "Unknown panel error";
-          send({ type: "error", message });
+          send({
+            type: "error",
+            message,
+            needWorkspace: isWorkspaceIdRequiredError(message),
+          });
         }
       } finally {
         try {

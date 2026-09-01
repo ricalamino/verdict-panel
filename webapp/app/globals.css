@@ -172,6 +172,10 @@ body::before {
   min-width: 0;
 }
 
+.key-label-spaced {
+  margin-top: 0.85rem;
+}
+
 .key-hint {
   margin: 0.55rem 0 0;
   font-size: 0.82rem;

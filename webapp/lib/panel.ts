@@ -30,8 +30,19 @@ export type TranscriptEntry = {
   round: "opening" | `reply-${number}`;
 };
 
-export function createClient(apiKey: string) {
-  return new Anthropic({ apiKey });
+export function createClient(apiKey: string, workspaceId?: string) {
+  const ws = workspaceId?.trim();
+  return new Anthropic({
+    apiKey,
+    ...(ws
+      ? { defaultHeaders: { "anthropic-workspace-id": ws } }
+      : {}),
+  });
+}
+
+/** Identity-linked keys (personal / service-account) need a workspace unless scoped. */
+export function isWorkspaceIdRequiredError(message: string) {
+  return message.includes("anthropic-workspace-id is required");
 }
 
 /**
@@ -113,7 +124,7 @@ export type PanelEvent =
   | { type: "briefing"; briefing: Briefing; audit: ResearchAudit | null }
   | { type: "speech"; entry: TranscriptEntry }
   | { type: "verdict"; text: string }
-  | { type: "error"; message: string }
+  | { type: "error"; message: string; needWorkspace?: boolean }
   | { type: "done" };
 
 export async function* runPanel(
@@ -125,8 +136,9 @@ export async function* runPanel(
   skipResearch = false,
   signal?: AbortSignal,
   firstHandEvidence = "",
+  workspaceId?: string,
 ): AsyncGenerator<PanelEvent> {
-  const client = createClient(apiKey);
+  const client = createClient(apiKey, workspaceId);
   const p = getPrompts(locale);
   const fatosVf = parseFirstHandEvidence(firstHandEvidence);
 
@@ -254,8 +266,9 @@ export async function refineIdea(
   idea: string,
   guidelines: string,
   locale: Locale = "en",
+  workspaceId?: string,
 ): Promise<{ idea: string; guidelines: string }> {
-  const client = createClient(apiKey);
+  const client = createClient(apiKey, workspaceId);
   const p = getPrompts(locale);
   const shared = sharedPrefix(idea, guidelines, locale, "", false);
   const raw = await callModel(

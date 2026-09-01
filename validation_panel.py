@@ -13,6 +13,9 @@ most fragile hypotheses for you to test with real humans this week.
 
 Usage:
     export ANTHROPIC_API_KEY="your-key"
+    # Identity-linked (personal/service-account) keys that aren't scoped to a
+    # single workspace also need:
+    export ANTHROPIC_WORKSPACE_ID="wrkspc_..."
     pip install anthropic
     python validation_panel.py
 
@@ -34,7 +37,14 @@ REPLY_ROUNDS = 1                           # nr. of reply rounds (0-2 is the use
 MAX_TOKENS_PANEL = 700
 MAX_TOKENS_JUDGE = 1500
 
-client = Anthropic()  # reads ANTHROPIC_API_KEY from the environment
+_workspace_id = os.environ.get("ANTHROPIC_WORKSPACE_ID", "").strip()
+client = Anthropic(
+    **(
+        {"default_headers": {"anthropic-workspace-id": _workspace_id}}
+        if _workspace_id
+        else {}
+    )
+)  # reads ANTHROPIC_API_KEY from the environment
 
 
 # ---------------------------------------------------------------------------
@@ -117,12 +127,21 @@ If NO-GO: explain in 2 sentences why it dies. Do not console, do not soften."""
 
 def call(model, system, user_message, max_tokens):
     """Simple call to the messages endpoint."""
-    resp = client.messages.create(
-        model=model,
-        max_tokens=max_tokens,
-        system=system,
-        messages=[{"role": "user", "content": user_message}],
-    )
+    try:
+        resp = client.messages.create(
+            model=model,
+            max_tokens=max_tokens,
+            system=system,
+            messages=[{"role": "user", "content": user_message}],
+        )
+    except Exception as e:
+        if "anthropic-workspace-id is required" in str(e):
+            sys.exit(
+                "Identity-linked API key: set ANTHROPIC_WORKSPACE_ID=wrkspc_... "
+                "(Console → Settings → Workspaces → ID) or create a "
+                "workspace-scoped key."
+            )
+        raise
     return "".join(b.text for b in resp.content if b.type == "text").strip()
 
 
