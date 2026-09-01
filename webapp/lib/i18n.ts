@@ -64,6 +64,7 @@ export type Messages = {
   errNeedFields: string;
   errRefine: string;
   errPanel: string;
+  errStreamDropped: string;
   noVerdict: string;
   roleShort: Record<RoleId, string>;
   roleName: Record<RoleId, string>;
@@ -151,6 +152,8 @@ const en: Messages = {
   errNeedFields: "Idea and guidelines are required.",
   errRefine: "Refine failed",
   errPanel: "Panel error",
+  errStreamDropped:
+    "Connection dropped before the panel finished. Anthropic may already have billed this run — check usage before retrying.",
   noVerdict: "(no verdict)",
   roleShort: {
     advocate: "Defense",
@@ -260,6 +263,8 @@ const pt: Messages = {
   errNeedFields: "Ideia e diretrizes são obrigatórias.",
   errRefine: "Falha ao refinar",
   errPanel: "Erro no painel",
+  errStreamDropped:
+    "Conexão caiu antes do painel terminar. A Anthropic pode ter cobrado essa rodada — olha o usage antes de retentar.",
   noVerdict: "(sem veredito)",
   roleShort: {
     advocate: "Defesa",

@@ -16,10 +16,16 @@ import {
 } from "./prompts.server";
 
 /**
- * Per-axis ceiling. Axes run in parallel with small contexts — a hang on one
- * should not block the others forever.
+ * Per-axis ceiling. 3.5 min was killing healthy web_search loops AFTER Anthropic
+ * had already billed — the client saw a network/timeout error and the $ was gone.
+ * Route maxDuration is 10 min; 3 parallel axes share wall clock, then debate.
  */
-const REQUEST_TIMEOUT_MS = 3.5 * 60 * 1000;
+const REQUEST_TIMEOUT_MS = 6 * 60 * 1000;
+
+export type AxisProgress = {
+  axis: ResearchAxisId;
+  status: "start" | "done" | "fail";
+};
 
 export type Fact = {
   id: string;
@@ -166,12 +172,32 @@ export async function runResearcher(
   guidelines: string,
   locale: Locale,
   signal?: AbortSignal,
+  onProgress?: (p: AxisProgress) => void,
 ): Promise<ResearchResult> {
   const settled = await Promise.all(
-    RESEARCH_AXIS_IDS.map((axis) =>
-      runAxis(client, axis, idea, guidelines, locale, signal),
-    ),
+    RESEARCH_AXIS_IDS.map(async (axis) => {
+      onProgress?.({ axis, status: "start" });
+      const result = await runAxis(
+        client,
+        axis,
+        idea,
+        guidelines,
+        locale,
+        signal,
+      );
+      onProgress?.({
+        axis,
+        status: result.briefing ? "done" : "fail",
+      });
+      return result;
+    }),
   );
+
+  if (signal?.aborted) {
+    const err = new Error("Aborted");
+    err.name = "AbortError";
+    throw err;
+  }
 
   const audit = emptyAudit();
   const parts: Briefing[] = [];

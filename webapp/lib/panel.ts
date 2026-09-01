@@ -80,7 +80,7 @@ async function callModel(
       system,
       messages: [{ role: "user", content: userMessage }],
     },
-    { signal },
+    { signal, timeout: 3 * 60 * 1000, maxRetries: 0 },
   );
 
   const cacheRead = resp.usage.cache_read_input_tokens ?? 0;
@@ -121,11 +121,35 @@ function sharedPrefix(
 
 export type PanelEvent =
   | { type: "round"; name: string }
+  | { type: "progress"; text: string }
+  | { type: "heartbeat" }
   | { type: "briefing"; briefing: Briefing; audit: ResearchAudit | null }
   | { type: "speech"; entry: TranscriptEntry }
   | { type: "verdict"; text: string }
-  | { type: "error"; message: string; needWorkspace?: boolean }
+  | {
+      type: "error";
+      message: string;
+      needWorkspace?: boolean;
+      connection?: boolean;
+    }
   | { type: "done" };
+
+export function isAbortError(err: unknown) {
+  if (!err || typeof err !== "object") return false;
+  const e = err as { name?: string; message?: string };
+  return (
+    e.name === "AbortError" ||
+    e.name === "APIUserAbortError" ||
+    (typeof e.message === "string" && /aborted/i.test(e.message))
+  );
+}
+
+function throwIfAborted(signal?: AbortSignal) {
+  if (!signal?.aborted) return;
+  const err = new Error("Aborted");
+  err.name = "AbortError";
+  throw err;
+}
 
 export async function* runPanel(
   apiKey: string,
@@ -145,13 +169,39 @@ export async function* runPanel(
   let briefingBlock = "";
   if (!skipResearch) {
     yield { type: "round", name: p.researchRound };
-    const { briefing, audit } = await runResearcher(
+
+    const extra: PanelEvent[] = [];
+    let tick: (() => void) | undefined;
+    let finished = false;
+    const researchP = runResearcher(
       client,
       idea,
       guidelines,
       locale,
       signal,
-    );
+      ({ axis, status }) => {
+        extra.push({
+          type: "progress",
+          text: `${p.researchRound} · ${axis} ${status}`,
+        });
+        tick?.();
+      },
+    ).finally(() => {
+      finished = true;
+      tick?.();
+    });
+
+    while (!finished) {
+      while (extra.length) yield extra.shift()!;
+      if (finished) break;
+      await new Promise<void>((resolve) => {
+        tick = resolve;
+      });
+    }
+    while (extra.length) yield extra.shift()!;
+
+    const { briefing, audit } = await researchP;
+    throwIfAborted(signal);
     briefing.fatos_vf = fatosVf;
     briefingBlock = renderBriefingContext(briefing, {
       emptyNotice: p.briefingEmpty,
@@ -194,6 +244,7 @@ export async function* runPanel(
   yield { type: "round", name: p.openingRound };
 
   for (const role of ROLE_IDS) {
+    throwIfAborted(signal);
     const text = await callModel(
       client,
       PANEL_MODEL,
@@ -221,6 +272,7 @@ export async function* runPanel(
     const newRound: TranscriptEntry[] = [];
 
     for (const role of ROLE_IDS) {
+      throwIfAborted(signal);
       const text = await callModel(
         client,
         PANEL_MODEL,
@@ -243,6 +295,8 @@ export async function* runPanel(
   }
 
   yield { type: "round", name: p.judgeRound };
+
+  throwIfAborted(signal);
 
   const debate = transcript
     .map((e) => `### ${e.roleLabel}\n${e.text}`)

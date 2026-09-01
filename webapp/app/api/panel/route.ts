@@ -1,11 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isLocale } from "@/lib/i18n";
-import { isWorkspaceIdRequiredError, runPanel } from "@/lib/panel";
+import {
+  isAbortError,
+  isWorkspaceIdRequiredError,
+  runPanel,
+} from "@/lib/panel";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 // Research alone can take ~2–3 min; debate after that. Was 300 and killed
 // mid-research while the Anthropic request kept burning.
 export const maxDuration = 600;
+
+const HEARTBEAT_MS = 10_000;
+
+function isConnectionError(message: string) {
+  return /connection|network|ECONNRESET|ETIMEDOUT|socket|fetch failed/i.test(
+    message,
+  );
+}
 
 export async function POST(req: NextRequest) {
   const apiKey = req.headers.get("x-api-key")?.trim();
@@ -44,18 +57,36 @@ export async function POST(req: NextRequest) {
   const firstHandEvidence = body.firstHandEvidence?.trim() ?? "";
   const encoder = new TextEncoder();
 
+  const abort = new AbortController();
+  const stop = () => {
+    if (!abort.signal.aborted) abort.abort();
+  };
+  req.signal.addEventListener("abort", stop);
+
   const stream = new ReadableStream({
     async start(controller) {
-      // Once the client disconnects the stream is gone; enqueueing into it
-      // throws. Swallow that so it doesn't mask the real abort.
-      const send = (data: unknown) => {
-        if (req.signal.aborted) return;
+      const sendRaw = (chunk: string) => {
+        if (abort.signal.aborted) return false;
         try {
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+          controller.enqueue(encoder.encode(chunk));
+          return true;
         } catch {
-          // stream already closed by the client
+          stop();
+          return false;
         }
       };
+
+      const send = (data: unknown) => {
+        sendRaw(`data: ${JSON.stringify(data)}\n\n`);
+      };
+
+      // Idle SSE (research can sit 2–3 min with no events) gets killed by
+      // Node requestTimeout / Docker / WSL / browsers — while Anthropic
+      // keeps running and billing. Ping + padding forces a flush.
+      const heartbeat = setInterval(() => {
+        const pad = " ".repeat(1024);
+        sendRaw(`: ka ${Date.now()}${pad}\n\ndata: {"type":"heartbeat"}\n\n`);
+      }, HEARTBEAT_MS);
 
       try {
         for await (const event of runPanel(
@@ -65,24 +96,25 @@ export async function POST(req: NextRequest) {
           replyRounds,
           locale,
           body.skipResearch === true,
-          req.signal,
+          abort.signal,
           firstHandEvidence,
           workspaceId,
         )) {
           send(event);
         }
       } catch (err) {
-        // An abort is the user pressing Stop, not a failure worth reporting.
-        if (!req.signal.aborted) {
-          const message =
-            err instanceof Error ? err.message : "Unknown panel error";
-          send({
-            type: "error",
-            message,
-            needWorkspace: isWorkspaceIdRequiredError(message),
-          });
-        }
+        if (isAbortError(err) || abort.signal.aborted) return;
+        const message =
+          err instanceof Error ? err.message : "Unknown panel error";
+        send({
+          type: "error",
+          message,
+          needWorkspace: isWorkspaceIdRequiredError(message),
+          connection: isConnectionError(message),
+        });
       } finally {
+        clearInterval(heartbeat);
+        req.signal.removeEventListener("abort", stop);
         try {
           controller.close();
         } catch {
@@ -90,13 +122,18 @@ export async function POST(req: NextRequest) {
         }
       }
     },
+    cancel() {
+      stop();
+    },
   });
 
   return new Response(stream, {
     headers: {
-      "Content-Type": "text/event-stream",
+      "Content-Type": "text/event-stream; charset=utf-8",
       "Cache-Control": "no-cache, no-transform",
       Connection: "keep-alive",
+      "X-Accel-Buffering": "no",
+      "Content-Encoding": "none",
     },
   });
 }

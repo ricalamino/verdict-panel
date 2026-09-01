@@ -15,9 +15,24 @@ import {
   getMessages,
   isLocale,
   type Locale,
+  type Messages,
 } from "@/lib/i18n";
 import type { PanelEvent, TranscriptEntry } from "@/lib/panel";
 import type { Briefing, ResearchAudit } from "@/lib/research";
+
+function formatClientError(e: unknown, t: Messages): string {
+  if (!(e instanceof Error)) return t.errPanel;
+  const m = e.message.toLowerCase();
+  if (
+    e.name === "TypeError" ||
+    /failed to fetch|networkerror|network error|load failed|connection error|econnreset|etimedout/.test(
+      m,
+    )
+  ) {
+    return t.errStreamDropped;
+  }
+  return e.message;
+}
 
 export default function HomePage() {
   const [locale, setLocale] = useState<Locale>(DEFAULT_LOCALE);
@@ -127,6 +142,7 @@ export default function HomePage() {
     setAudit(null);
     setCurrentRound(t.starting);
 
+    let finished = false;
     try {
       const res = await fetch("/api/panel", {
         method: "POST",
@@ -168,6 +184,8 @@ export default function HomePage() {
           const event = JSON.parse(line.slice(6)) as PanelEvent;
 
           if (event.type === "round") setCurrentRound(event.name);
+          if (event.type === "progress") setCurrentRound(event.text);
+          if (event.type === "heartbeat") continue;
           if (event.type === "briefing") {
             setBriefing(event.briefing);
             setAudit(event.audit);
@@ -181,14 +199,21 @@ export default function HomePage() {
           }
           if (event.type === "error") {
             throw new Error(
-              event.needWorkspace ? t.errNeedWorkspace : event.message,
+              event.needWorkspace
+                ? t.errNeedWorkspace
+                : event.connection
+                  ? t.errStreamDropped
+                  : event.message,
             );
           }
+          if (event.type === "done") finished = true;
         }
       }
+
+      if (!finished) throw new Error(t.errStreamDropped);
     } catch (e) {
       if (e instanceof Error && e.name === "AbortError") return;
-      setError(e instanceof Error ? e.message : t.errPanel);
+      setError(formatClientError(e, t));
     } finally {
       setRunning(false);
       setCurrentRound(null);
